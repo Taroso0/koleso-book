@@ -4,6 +4,7 @@ import { getIllustration } from "@/lib/illustrations";
 import { BookSwitcher } from "./BookSwitcher";
 import { IllustrationPlate } from "./IllustrationPlate";
 import { ProseBody } from "./ProseBody";
+import { ReaderShell } from "./ReaderShell";
 
 type Adjacent = { slug: string; title: string };
 
@@ -36,22 +37,29 @@ export function Reader({
         <BookSwitcher current={book.id} />
       </header>
 
-      <article className="mt-10">
-        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          {book.title} · {number}
-        </p>
-        <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight text-balance">
-          {story.title}
-        </h1>
+      <ReaderShell
+        slug={story.slug}
+        bookId={book.id}
+        bookTitle={book.title}
+        title={story.title}
+      >
+        <article className="mt-10">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            {book.title} · {number}
+          </p>
+          <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight text-balance">
+            {story.title}
+          </h1>
 
-        {illustration && (
-          <IllustrationPlate illustration={illustration} priority />
-        )}
+          {illustration && (
+            <IllustrationPlate illustration={illustration} priority />
+          )}
 
-        <div className="mt-10 font-serif text-lg leading-prose text-foreground">
-          <ProseBody body={story.body} />
-        </div>
-      </article>
+          <div className="mt-10 font-serif text-lg leading-prose text-foreground">
+            <ProseBody body={story.body} />
+          </div>
+        </article>
+      </ReaderShell>
 
       <nav className="mt-16 flex justify-between gap-6 border-t border-border pt-6 font-sans text-sm">
         {prev ? (

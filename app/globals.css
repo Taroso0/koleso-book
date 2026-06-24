@@ -127,3 +127,42 @@ html.lenis body {
 .lenis.lenis-stopped {
   overflow: clip;
 }
+
+/* «Читальня»: темы чтения. Приоритет — читаемость (WCAG AA), не атмосфера (§6).
+   Переопределяют токены внутри .reading-root → без правок классов в компонентах.
+   Атрибут data-reading-theme ставится на <html> (анти-FOUC скрипт в layout). */
+.reading-root {
+  background: var(--background);
+  color: var(--foreground);
+}
+html[data-reading-theme="sepia"] .reading-root {
+  --background: oklch(0.937 0.026 80); /* тёплая бумага */
+  --foreground: oklch(0.3 0.035 55); /* тёмно-коричневый */
+  --card: oklch(0.96 0.02 80);
+  --muted-foreground: oklch(0.45 0.035 58);
+  --border: oklch(0.85 0.03 75);
+  --secondary: oklch(0.89 0.035 80);
+  --secondary-foreground: oklch(0.3 0.035 55);
+}
+html[data-reading-theme="dark"] .reading-root {
+  --background: oklch(0.18 0.006 250); /* мягче глобального .dark — для длинного чтения */
+  --foreground: oklch(0.9 0.006 160);
+  --card: oklch(0.235 0.012 250);
+  --muted-foreground: oklch(0.66 0.01 250);
+  --border: oklch(1 0 0 / 14%);
+  --secondary: oklch(0.29 0.012 250);
+  --secondary-foreground: oklch(0.92 0.006 160);
+}
+
+/* Постраничный режим: контент течёт в CSS-колонки, каждая колонка — «страница».
+   Разрывы не должны рвать заголовки и плашку; высота плашки ограничена страницей. */
+.reading-paged :is(h1, h2, figure) {
+  break-inside: avoid;
+}
+.reading-paged figure {
+  max-height: 70%;
+}
+.reading-paged p {
+  orphans: 2;
+  widows: 2;
+}

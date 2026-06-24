@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getBooks, getAllStories } from "@/lib/content";
+import { ContinueReading } from "@/components/reader/ContinueReading";
 
 export const metadata = { title: "Читальня — Боковым зрением" };
 
@@ -20,6 +21,8 @@ export default function ReadIndex() {
         Две книги, тридцать четыре рассказа. Нативный скролл — без инерции:
         длинный текст несовместим с инерционным движением.
       </p>
+
+      <ContinueReading />
 
       <div className="mt-12 space-y-12">
         {books.map((book) => (
