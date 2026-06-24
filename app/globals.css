@@ -111,6 +111,11 @@
   html {
     @apply font-sans;
   }
+  /* Видимый фокус с клавиатуры — натриевое кольцо на всех интерактивных элементах (WCAG 2.4.7). */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 /* Lenis (инерционный скролл «Витрины»; активен только когда добавлен класс .lenis). */
@@ -130,7 +135,7 @@ html.lenis body {
 
 /* «Читальня»: темы чтения. Приоритет — читаемость (WCAG AA), не атмосфера (§6).
    Переопределяют токены внутри .reading-root → без правок классов в компонентах.
-   Атрибут data-reading-theme ставится на <html> (анти-FOUC скрипт в layout). */
+   Атрибут data-reading-theme ставит ReadingThemeInit (клиент, после гидрации). */
 .reading-root {
   background: var(--background);
   color: var(--foreground);
@@ -155,12 +160,21 @@ html[data-reading-theme="dark"] .reading-root {
 }
 
 /* Постраничный режим: контент течёт в CSS-колонки, каждая колонка — «страница».
-   Разрывы не должны рвать заголовки и плашку; высота плашки ограничена страницей. */
-.reading-paged :is(h1, h2, figure) {
+   Заголовки не рвём; плашка вписывается в страницу (object-fit) и получает
+   ОТДЕЛЬНУЮ страницу (break-after), чтобы проза начиналась со следующей. */
+.reading-paged :is(h1, h2) {
   break-inside: avoid;
 }
 .reading-paged figure {
-  max-height: 70%;
+  break-inside: avoid;
+  break-after: column;
+  height: 56%;
+  margin: 1rem auto 0;
+}
+.reading-paged figure img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
 }
 .reading-paged p {
   orphans: 2;

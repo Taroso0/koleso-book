@@ -55,7 +55,7 @@ export function ReaderShell({
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
   const [measured, setMeasured] = useState(false);
-  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [colWidth, setColWidth] = useState(0);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -69,14 +69,14 @@ export function ReaderShell({
   }, []);
 
   // --- Постраничный режим: измерение колонок ---
+  // Высота «страницы» задаётся из CSS (стабильна, НЕ зависит от позиции скролла).
+  // JS меряет только ширину колонки и общую ширину контента → число страниц.
   const measure = useCallback(() => {
     const vp = viewportRef.current;
     const ct = contentRef.current;
     if (!vp || !ct) return;
     const w = vp.clientWidth;
-    const top = vp.getBoundingClientRect().top;
-    const h = Math.max(320, Math.floor(window.innerHeight - top - 96));
-    setDims({ w, h });
+    setColWidth(w);
     // scrollWidth корректен после применения стилей колонок — читаем в следующем кадре.
     requestAnimationFrame(() => {
       const count = Math.max(1, Math.round((ct.scrollWidth + GAP) / (w + GAP)));
@@ -99,6 +99,11 @@ export function ReaderShell({
       window.removeEventListener("orientationchange", measure);
     };
   }, [mounted, mode, measure]);
+
+  // При входе в постраничный режим — к началу страницы (пагинатор прижат к верху).
+  useEffect(() => {
+    if (mounted && mode === "paged") window.scrollTo(0, 0);
+  }, [mounted, mode]);
 
   // Восстановление позиции (один раз) — когда раскладка готова.
   useEffect(() => {
@@ -182,20 +187,15 @@ export function ReaderShell({
   return (
     <>
       {paged ? (
-        <div
-          ref={viewportRef}
-          className="overflow-hidden"
-          style={{ height: dims?.h }}
-        >
+        <div ref={viewportRef} className="h-[calc(100svh-9rem)] overflow-hidden">
           <div
             ref={contentRef}
-            className="reading-paged"
+            className="reading-paged h-full"
             style={{
-              height: dims?.h,
-              columnWidth: dims ? `${dims.w}px` : undefined,
+              columnWidth: colWidth ? `${colWidth}px` : undefined,
               columnGap: `${GAP}px`,
-              transform: dims
-                ? `translateX(-${page * (dims.w + GAP)}px)`
+              transform: colWidth
+                ? `translateX(-${page * (colWidth + GAP)}px)`
                 : undefined,
               transition: reduced ? undefined : "transform 350ms ease",
             }}

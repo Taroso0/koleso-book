@@ -27,7 +27,7 @@ export function Reader({
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
-      <header className="flex items-center justify-between gap-4 border-b border-border pb-4">
+      <header className="sticky top-0 z-10 -mx-6 flex items-center justify-between gap-4 border-b border-border bg-background/80 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/65">
         <Link
           href="/read"
           className="font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
@@ -38,6 +38,7 @@ export function Reader({
       </header>
 
       <ReaderShell
+        key={story.slug}
         slug={story.slug}
         bookId={book.id}
         bookTitle={book.title}
