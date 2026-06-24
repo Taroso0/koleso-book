@@ -38,6 +38,7 @@ export const bookSchema = z.object({
   id: bookIdSchema,
   title: z.string().min(1),
   year: z.number().int(),
+  artist: z.string().min(1).optional(), // иллюстратор книги (для подписи плашек)
   stories: z.array(z.string().min(1)), // slug'и рассказов по порядку
 });
 export type Book = z.infer<typeof bookSchema>;

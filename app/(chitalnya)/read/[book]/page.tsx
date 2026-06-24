@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBooks, getAllStories } from "@/lib/content";
+import { BookSwitcher } from "@/components/reader/BookSwitcher";
 
 // Полная SSG: все книги известны на сборке, неизвестный slug → 404.
 export const dynamicParams = false;
@@ -32,12 +33,16 @@ export default async function BookPage({
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-        <Link href="/read" className="hover:text-foreground">
+      <header className="flex items-center justify-between gap-4 border-b border-border pb-4">
+        <Link
+          href="/read"
+          className="font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+        >
           ← Читальня
         </Link>
-      </p>
-      <h1 className="mt-4 font-serif text-4xl font-medium tracking-tight text-balance">
+        <BookSwitcher current={meta.id} />
+      </header>
+      <h1 className="mt-10 font-serif text-4xl font-medium tracking-tight text-balance">
         {meta.title}
       </h1>
       <p className="mt-2 font-mono text-sm text-muted-foreground">{meta.year}</p>
@@ -53,7 +58,7 @@ export default async function BookPage({
                   <span className="font-mono text-sm tabular-nums text-muted-foreground">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <h2 className="font-serif text-xl group-hover:text-sodium">
+                  <h2 className="font-serif text-xl underline-offset-4 group-hover:underline">
                     {story.title}
                   </h2>
                 </div>

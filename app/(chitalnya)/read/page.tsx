@@ -25,7 +25,10 @@ export default function ReadIndex() {
         {books.map((book) => (
           <section key={book.id}>
             <h2 className="font-sans text-xl font-medium tracking-tight">
-              <Link href={`/read/${book.id}`} className="hover:text-sodium">
+              <Link
+                href={`/read/${book.id}`}
+                className="underline-offset-4 hover:underline"
+              >
                 {book.title}
               </Link>
               <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
@@ -43,7 +46,7 @@ export default function ReadIndex() {
                     </span>
                     <Link
                       href={`/read/${book.id}/${slug}`}
-                      className="hover:text-sodium"
+                      className="underline-offset-4 hover:underline"
                     >
                       {story.title}
                     </Link>
