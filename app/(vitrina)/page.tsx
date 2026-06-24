@@ -1,38 +1,46 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ReduceMotionToggle } from "@/components/motion/ReduceMotionToggle";
+import { WheelIndex } from "@/components/wheel/WheelIndex";
+import { getAllStories } from "@/lib/content";
+import { themes } from "@/content/themes";
+import { buildGraph } from "@/lib/graph";
+import { BOOK_IDS } from "@/content/schema";
 
-// Временный типографический специмен «Витрины» (до «Колеса», Фаза 3).
+// Хаб и точка входа — «Колесо» (§3). Шаг 3.1: каноническая навигация — доступный
+// двойник <WheelIndex />. Визуальный граф d3-force ляжет поверх индекса (Шаг 3.2).
 export default function VitrinaHome() {
+  const stories = getAllStories().sort(
+    (a, b) =>
+      BOOK_IDS.indexOf(a.book) - BOOK_IDS.indexOf(b.book) || a.order - b.order,
+  );
+  const graph = buildGraph(stories, themes);
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-10 px-6 py-16">
+    <main className="mx-auto max-w-2xl px-6 py-16">
       <header className="space-y-2">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          боковым зрением · витрина
+          боковым зрением · Евгений Кирилов
         </p>
         <h1 className="font-serif text-4xl font-medium tracking-tight text-balance">
-          Душа против системы
+          Боковым зрением
         </h1>
+        <p className="font-serif text-lg leading-[1.7] text-muted-foreground">
+          Чудо живёт не в космосе, а в обыденном — в офисе, фонаре, на скамейке.
+          Его видно боковым зрением.
+        </p>
       </header>
 
-      <section className="space-y-6">
-        <p className="font-serif text-lg leading-[1.7]">
-          Проза (антиква). Как давно вы смотрели в небо? «Ёлочки», короткое тире –
-          и длинное — тире, многоточие… ударение: во́ду.
-        </p>
-        <p className="font-sans text-base text-muted-foreground">
-          Система (гротеск Inter). Меню, метаданные, интерфейс. «Кавычки», тире — во́ду.
-        </p>
-        <p className="font-mono text-sm">Машина (моно). recycle_bin · fake_it · во́ду · «—…»</p>
-      </section>
+      <div className="mt-14">
+        <WheelIndex graph={graph} />
+      </div>
 
-      <div className="flex flex-wrap items-center gap-4">
+      <footer className="mt-16 flex flex-wrap items-center gap-4 border-t border-border pt-6">
         <Button asChild>
           <Link href="/read">Войти в Читальню</Link>
         </Button>
-        <span className="text-sm font-medium text-sodium">натриевый акцент</span>
         <ReduceMotionToggle />
-      </div>
+      </footer>
     </main>
   );
 }
