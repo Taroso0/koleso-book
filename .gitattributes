@@ -1,0 +1,15 @@
+# Нормализация переводов строк: в репозитории и рабочей копии всегда LF.
+# Важно для кириллицы и контент-пайплайна (скрипт пишет LF).
+* text=auto eol=lf
+
+# Бинарные ассеты — без нормализации и diff.
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.avif  binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
