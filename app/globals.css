@@ -135,7 +135,7 @@ html.lenis body {
 
 /* «Читальня»: темы чтения. Приоритет — читаемость (WCAG AA), не атмосфера (§6).
    Переопределяют токены внутри .reading-root → без правок классов в компонентах.
-   Атрибут data-reading-theme ставит ReadingThemeInit (клиент, после гидрации). */
+   Атрибут data-reading-theme ставит пре-пейнт скрипт в корневом layout (без вспышки). */
 .reading-root {
   background: var(--background);
   color: var(--foreground);
@@ -179,4 +179,11 @@ html[data-reading-theme="dark"] .reading-root {
 .reading-paged p {
   orphans: 2;
   widows: 2;
+}
+
+/* Пре-пейнт: если выбран постраничный режим, до гидрации прячем контент-«свиток»,
+   чтобы при F5 не мелькал текст свитком. data-reading-mode ставит пре-пейнт скрипт;
+   после монтирования отрисовкой управляет React (показывает «страницы»). */
+html[data-reading-mode="paged"] [data-reading-content] {
+  visibility: hidden;
 }

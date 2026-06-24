@@ -29,6 +29,11 @@ const THEMES: { id: ReadingTheme; label: string }[] = [
   { id: "dark", label: "Тёмная" },
 ];
 
+// useLayoutEffect на клиенте, useEffect на сервере (без SSR-предупреждения).
+// Нужен пре-пейнт-эффект, чтобы при F5 в постраничном режиме не мелькнул «свиток».
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 // Клиентская оболочка чтения (Шаг 2.3): постраничный режим (CSS-колонки),
 // прогресс в localStorage (восстановление позиции, «продолжить»), темы чтения.
 // Под reduced-motion переход страниц — без анимации. Контент (children) отрисован
@@ -61,10 +66,13 @@ export function ReaderShell({
   const contentRef = useRef<HTMLDivElement>(null);
   const restoredRef = useRef(false);
 
-  // Прочитать сохранённые настройки после монтирования (избегаем SSR-расхождения).
-  useEffect(() => {
-    setMode(getReadingMode());
+  // Прочитать сохранённые настройки и синхронизировать пре-пейнт-атрибут режима.
+  // useIsoLayoutEffect — до отрисовки, чтобы при F5 не мелькнул «свиток».
+  useIsoLayoutEffect(() => {
+    const m = getReadingMode();
+    setMode(m);
     setTheme(getReadingTheme());
+    document.documentElement.dataset.readingMode = m;
     setMounted(true);
   }, []);
 
@@ -86,7 +94,7 @@ export function ReaderShell({
     });
   }, []);
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!mounted || mode !== "paged") return;
     measure();
     const vp = viewportRef.current;
@@ -174,6 +182,7 @@ export function ReaderShell({
   const changeMode = (m: ReadingMode) => {
     restoredRef.current = false;
     if (m === "paged") setMeasured(false);
+    document.documentElement.dataset.readingMode = m;
     setMode(m);
     setReadingMode(m);
   };
@@ -204,7 +213,7 @@ export function ReaderShell({
           </div>
         </div>
       ) : (
-        <div>{children}</div>
+        <div data-reading-content>{children}</div>
       )}
 
       {mounted && (
