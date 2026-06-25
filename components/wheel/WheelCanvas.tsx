@@ -63,6 +63,7 @@ export function WheelCanvas({
     return computeWheelLayout(reweight(graph, activeStorySlug), {
       initial: layout,
       iterations: 80,
+      anchor: activeStorySlug, // активный рассказ не двигается — иначе hover «убегает»
     });
   }, [reduced, activeStorySlug, graph, layout]);
 
