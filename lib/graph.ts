@@ -59,3 +59,21 @@ export function groupByTheme(graph: WheelGraph): ThemeWithStories[] {
       return { theme, stories };
     });
 }
+
+/** Усилить рёбра активного рассказа и его тем (§5 «↑weight соседних рёбер»).
+ *  Чистая; потребитель — перестройка «Колеса» при чтении (Шаг 3.3). */
+export function reweight(
+  graph: WheelGraph,
+  activeSlug: string,
+  boost = 4,
+): WheelGraph {
+  const activeThemes = new Set(
+    graph.links.filter((l) => l.source === activeSlug).map((l) => l.target),
+  );
+  const links = graph.links.map((l) =>
+    l.source === activeSlug || activeThemes.has(l.target)
+      ? { ...l, weight: l.weight * boost }
+      : l,
+  );
+  return { nodes: graph.nodes, links };
+}
