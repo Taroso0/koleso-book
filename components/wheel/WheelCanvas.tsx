@@ -75,8 +75,26 @@ export function WheelCanvas({
   const linkLit = (s: string, t: string) =>
     !!activeId && (s === activeId || t === activeId);
 
-  const preview = activeNode?.kind === "story" ? activeNode : null;
-  const previewPos = preview ? displayLayout[preview.id] : null;
+  // Превью рассказа (заголовок + firstLine) расцеплено с подсветкой: при наведении
+  // на рассказ показываем его карточку. Если активна ТЕМА (закреплена кликом/
+  // фокусом), карточку даём только для ЕЁ подсвеченных (соседних) рассказов, а не
+  // для приглушённых; так на колесе видно, что это за рассказ под темой.
+  const hoveredNode = hoveredId
+    ? orderedNodes.find((n) => n.id === hoveredId) ?? null
+    : null;
+  const hoveredStory = hoveredNode?.kind === "story" ? hoveredNode : null;
+  const themeActive = activeNode?.kind === "theme" ? activeNode : null;
+  let previewNode: WheelNode | null = null;
+  if (hoveredStory) {
+    // при активной теме — только её подсвеченный рассказ
+    previewNode =
+      themeActive && !neighbors.get(themeActive.id)?.has(hoveredStory.id)
+        ? null
+        : hoveredStory;
+  } else if (activeNode?.kind === "story") {
+    previewNode = activeNode; // клавиатурный фокус на рассказе
+  }
+  const previewPos = previewNode ? displayLayout[previewNode.id] : null;
 
   const themeSide = (id: string): "start" | "end" =>
     (layout[id]?.x ?? 0) >= WHEEL_VIEW.width / 2 ? "start" : "end";
@@ -217,8 +235,8 @@ export function WheelCanvas({
         })}
       </svg>
 
-      {/* превью firstLine у активного рассказа */}
-      {preview && previewPos && (
+      {/* превью наведённого рассказа: заголовок + firstLine */}
+      {previewNode && previewPos && (
         <div
           className="pointer-events-none absolute z-10 w-56 -translate-x-1/2 -translate-y-full rounded-sm border border-border bg-card p-3 shadow-sm"
           style={{
@@ -227,10 +245,10 @@ export function WheelCanvas({
             marginTop: -14,
           }}
         >
-          <p className="font-sans text-sm font-medium">{preview.label}</p>
-          {preview.firstLine && (
+          <p className="font-sans text-sm font-medium">{previewNode.label}</p>
+          {previewNode.firstLine && (
             <p className="mt-1 line-clamp-3 font-serif text-xs leading-snug text-muted-foreground">
-              {preview.firstLine}
+              {previewNode.firstLine}
             </p>
           )}
         </div>
