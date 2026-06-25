@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ReduceMotionToggle } from "@/components/motion/ReduceMotionToggle";
 import { Reveal } from "@/components/motion/Reveal";
 import { AccentLine } from "@/components/motion/AccentLine";
+import { FogReveal } from "@/components/haunted/FogReveal";
 import { WheelIndex } from "@/components/wheel/WheelIndex";
 import { WheelGraph } from "@/components/wheel/WheelGraph";
 import { getAllStories, getBooks } from "@/lib/content";
@@ -42,10 +43,11 @@ export default function VitrinaHome() {
         </p>
       </header>
 
-      {/* Граф «Колеса» — десктоп-улучшение поверх индекса (на мобильном не рендерится). */}
-      <div className="mt-12 hidden lg:block">
+      {/* Граф «Колеса» — десктоп-улучшение поверх индекса (на мобильном не рендерится).
+          «Карта смыслов проявляется из тумана» (FogReveal, §8). */}
+      <FogReveal className="mt-12 hidden lg:block">
         <WheelGraph graph={graph} layout={layout} />
-      </div>
+      </FogReveal>
 
       {/* Канонический доступный двойник — всегда в DOM. */}
       <div className="mx-auto mt-12 max-w-2xl">
