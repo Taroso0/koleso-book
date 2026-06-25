@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import type { WheelGraph, WheelNode } from "@/lib/graph";
@@ -10,6 +10,10 @@ import { useReducedMotionSafe } from "@/components/motion/useReducedMotionSafe";
 import { cn } from "@/lib/utils";
 import { ThemeNode, type NodeState } from "./ThemeNode";
 import { StoryNode } from "./StoryNode";
+
+// Задержка «подержать» перед подсветкой узла — чтобы случайные пролёты мыши над
+// кругами при небыстром движении не захватывали их.
+const HOVER_DWELL_MS = 200;
 
 // Визуальный граф «Колеса» (§5/§8). Базовые позиции — предрасчёт на сборке (проп
 // layout). При внимании к рассказу (наведение/клавиатурный фокус) колесо
@@ -28,6 +32,7 @@ export function WheelCanvas({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [keyboardFocusId, setKeyboardFocusId] = useState<string | null>(null);
   const [focusIndex, setFocusIndex] = useState(0);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Порядок обхода клавиатурой: 10 тем (по кольцу), затем 34 рассказа.
   const orderedNodes = useMemo(
@@ -67,6 +72,14 @@ export function WheelCanvas({
     });
   }, [reduced, activeStorySlug, graph, layout]);
 
+  // Снять висящий таймер наведения при размонтировании.
+  useEffect(
+    () => () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    },
+    [],
+  );
+
   const nodeState = (id: string): NodeState => {
     if (!activeId) return "idle";
     if (id === activeId) return "active";
@@ -103,6 +116,19 @@ export function WheelCanvas({
     if (node.kind === "story" && node.book) {
       router.push(`/read/${node.book}/${node.id}`);
     }
+  };
+
+  // Наведение с задержкой: подсветка только если мышь «подержали» на узле.
+  const onNodeEnter = (id: string) => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setHoveredId(id), HOVER_DWELL_MS);
+  };
+  const onNodeLeave = () => {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+    setHoveredId(null);
   };
 
   const focusAt = (index: number) => {
@@ -209,9 +235,14 @@ export function WheelCanvas({
               className={cn(
                 "cursor-pointer outline-none",
                 state === "dim" && "opacity-25",
+                // при выбранной теме приглушённые рассказы некликабельны вовсе
+                themeActive &&
+                  node.kind === "story" &&
+                  state === "dim" &&
+                  "pointer-events-none",
               )}
-              onMouseEnter={() => setHoveredId(node.id)}
-              onMouseLeave={() => setHoveredId(null)}
+              onMouseEnter={() => onNodeEnter(node.id)}
+              onMouseLeave={onNodeLeave}
               onFocus={() => setKeyboardFocusId(node.id)}
               onClick={() => activate(node)}
               initial={false}
