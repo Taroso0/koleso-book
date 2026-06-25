@@ -17,8 +17,8 @@ type GlitchTextProps = {
 // текст. Базовый слой доступен (реальный текст); клоны — aria-hidden. Под
 // reduced-motion — статичный текст. WCAG 2.3.1: один разряд, без цикла, мелкие
 // смещения (нет >3 вспышек/сек).
-const GLITCH_MS = 630; // «разряд» — сдержанный темп (в 1.5× медленнее правок)
-const HOLD_MS = 280;
+const GLITCH_MS = 1200; // «разряд» — медленный, текст материализуется неспешно
+const HOLD_MS = 320;
 
 export function GlitchText({ text, className, play = true, onDone }: GlitchTextProps) {
   const reduced = useReducedMotionSafe();
@@ -39,7 +39,15 @@ export function GlitchText({ text, className, play = true, onDone }: GlitchTextP
 
   return (
     <span className={cn("relative inline-block", className)}>
-      <span className="relative z-10">{text}</span>
+      {/* базовый текст медленно «материализуется» (под reduced — статичен) */}
+      <motion.span
+        className="relative z-10"
+        initial={active ? { opacity: 0 } : false}
+        animate={active ? { opacity: 1 } : undefined}
+        transition={{ duration: (GLITCH_MS / 1000) * 0.8, ease: "easeOut" }}
+      >
+        {text}
+      </motion.span>
       {active && (
         <>
           <motion.span

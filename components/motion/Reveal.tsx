@@ -29,6 +29,7 @@ export function Reveal({
 }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotionSafe();
+  const revealed = useRef(false); // латч: вошёл в кадр — больше не перепрятываем
 
   useIsoLayoutEffect(() => {
     const el = ref.current;
@@ -38,16 +39,15 @@ export function Reveal({
       ? gsap.utils.toArray<HTMLElement>(el.children)
       : [el];
 
-    if (reduced) {
-      // Тумблер reduced-motion мог быть включён в рантайме — снять инлайновые
-      // стили GSAP, чтобы контент гарантированно остался видимым (а не «исчез»).
+    // Под reduced ИЛИ если блок уже проявлялся — держим видимым, не пересоздаём
+    // анимацию. (scrollTrigger-управляемый from при revert() уходит в opacity:0 —
+    // отсюда был баг исчезновения блоков при переключении тумблера движения.)
+    if (reduced || revealed.current) {
       gsap.set(targets, { clearProps: "opacity,transform" });
       return;
     }
 
     gsap.registerPlugin(ScrollTrigger);
-    // from-твин: revert() возвращает к ВИДИМОМУ конечному состоянию (а set+to
-    // откатывал бы к opacity:0 — отсюда был баг исчезновения при тумблере).
     const ctx = gsap.context(() => {
       gsap.from(targets, {
         opacity: 0,
@@ -55,7 +55,15 @@ export function Reveal({
         duration: 0.6,
         ease: "power2.out",
         stagger,
-        scrollTrigger: { trigger: el, start, once, invalidateOnRefresh: true },
+        scrollTrigger: {
+          trigger: el,
+          start,
+          once,
+          invalidateOnRefresh: true,
+          onEnter: () => {
+            revealed.current = true; // запомнить: показан — впредь не прятать
+          },
+        },
       });
     }, el);
     // Зажечь триггеры, уже находящиеся в кадре (важно при включении движения
