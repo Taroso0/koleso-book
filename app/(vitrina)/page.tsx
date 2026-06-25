@@ -1,17 +1,20 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ReduceMotionToggle } from "@/components/motion/ReduceMotionToggle";
+import { Reveal } from "@/components/motion/Reveal";
+import { AccentLine } from "@/components/motion/AccentLine";
 import { WheelIndex } from "@/components/wheel/WheelIndex";
 import { WheelGraph } from "@/components/wheel/WheelGraph";
-import { getAllStories } from "@/lib/content";
+import { getAllStories, getBooks } from "@/lib/content";
 import { themes } from "@/content/themes";
 import { buildGraph } from "@/lib/graph";
 import { computeWheelLayout } from "@/lib/wheelLayout";
 import { BOOK_IDS } from "@/content/schema";
 
-// Хаб и точка входа — «Колесо» (§3). Шаг 3.2: визуальный граф d3-force (десктоп,
-// остров ssr:false) ПОВЕРХ канонического доступного индекса <WheelIndex />.
-// Укладка считается здесь, на сборке (предрасчёт, §11-B2), и передаётся пропсом.
+// Хаб и точка входа — «Колесо» (§3/§9). Шаг 4.1: хаб-лендинг со скролл-сценами
+// «Витрины» (§7). Герой (Колесо) спокоен; ниже по скроллу проявляются тизеры-«лучи»
+// Автор/Книги/Мастерская — движется только проявление (§10), всё под reduced-motion.
+// Укладка графа считается здесь, на сборке (предрасчёт, §11-B2).
 export default function VitrinaHome() {
   const stories = getAllStories().sort(
     (a, b) =>
@@ -19,9 +22,13 @@ export default function VitrinaHome() {
   );
   const graph = buildGraph(stories, themes);
   const layout = computeWheelLayout(graph);
+  const books = getBooks().sort(
+    (a, b) => BOOK_IDS.indexOf(a.id) - BOOK_IDS.indexOf(b.id),
+  );
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16 lg:max-w-5xl">
+      {/* Герой — Колесо. Покой по умолчанию: не анимируем (граф фейдится сам). */}
       <header className="mx-auto max-w-2xl space-y-2">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           боковым зрением · Евгений Кирилов
@@ -45,12 +52,108 @@ export default function VitrinaHome() {
         <WheelIndex graph={graph} />
       </div>
 
-      <footer className="mx-auto mt-16 flex max-w-2xl flex-wrap items-center gap-4 border-t border-border pt-6">
-        <Button asChild>
-          <Link href="/read">Войти в Читальню</Link>
-        </Button>
-        <ReduceMotionToggle />
-      </footer>
+      {/* Скролл-сцены хаба: тизеры-«лучи» к разделам. Проявляются при входе в кадр. */}
+
+      {/* TODO: финальный текст «Автор» — за автором (голос §2/§6). */}
+      <section
+        id="author"
+        aria-labelledby="author-heading"
+        className="mx-auto mt-24 max-w-2xl"
+      >
+        <Reveal>
+          <h2
+            id="author-heading"
+            className="font-serif text-2xl font-medium tracking-tight"
+          >
+            Автор
+          </h2>
+          <AccentLine className="mt-3" />
+          <p className="mt-4 font-serif text-lg leading-[1.7] text-muted-foreground">
+            Евгений Кирилов пишет «офисную готику» — чудо, спрятанное в сером
+            корпоративном быту: в опенспейсе, в фонаре в три часа ночи, в
+            системном уведомлении. Тёпло, иронично, по-человечески — а не
+            торжественно.
+          </p>
+          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground/70">
+            Скоро
+          </p>
+        </Reveal>
+      </section>
+
+      {/* Книги как объекты (§9). Карточки ведут в Читальню (существующий маршрут). */}
+      <section
+        id="books"
+        aria-labelledby="books-heading"
+        className="mx-auto mt-24 max-w-2xl"
+      >
+        <Reveal>
+          <h2
+            id="books-heading"
+            className="font-serif text-2xl font-medium tracking-tight"
+          >
+            Книги
+          </h2>
+          <AccentLine className="mt-3" />
+          <p className="mt-4 font-serif text-lg leading-[1.7] text-muted-foreground">
+            Две изданные книги и третья в работе.
+          </p>
+        </Reveal>
+        <Reveal stagger={0.06} className="mt-6 grid gap-4 sm:grid-cols-2">
+          {books.map((book) => (
+            <Link
+              key={book.id}
+              href={`/read/${book.id}`}
+              className="group rounded-sm border border-border p-5 transition-colors hover:border-foreground/40"
+            >
+              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                {book.year}
+              </p>
+              <h3 className="mt-1 font-serif text-xl font-medium">
+                {book.title}
+              </h3>
+              <p className="mt-2 font-sans text-sm text-muted-foreground">
+                {book.stories.length} рассказов
+              </p>
+              <span className="mt-3 inline-block font-sans text-sm underline-offset-4 group-hover:underline">
+                Читать →
+              </span>
+            </Link>
+          ))}
+        </Reveal>
+      </section>
+
+      {/* Мастерская — 3-я книга building-in-public (§9/§11-A3). Маршрут — позже. */}
+      <section
+        id="workshop"
+        aria-labelledby="workshop-heading"
+        className="mx-auto mt-24 max-w-2xl"
+      >
+        <Reveal>
+          <h2
+            id="workshop-heading"
+            className="font-serif text-2xl font-medium tracking-tight"
+          >
+            Мастерская
+          </h2>
+          <AccentLine className="mt-3" />
+          <p className="mt-4 font-serif text-lg leading-[1.7] text-muted-foreground">
+            Третья книга растёт на глазах: фрагменты, черновики, заметки и новые
+            иллюстрации. Building-in-public для художественной прозы.
+          </p>
+          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground/70">
+            Скоро
+          </p>
+        </Reveal>
+      </section>
+
+      <Reveal>
+        <footer className="mx-auto mt-24 flex max-w-2xl flex-wrap items-center gap-4 border-t border-border pt-6">
+          <Button asChild>
+            <Link href="/read">Войти в Читальню</Link>
+          </Button>
+          <ReduceMotionToggle />
+        </footer>
+      </Reveal>
     </main>
   );
 }

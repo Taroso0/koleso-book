@@ -24,7 +24,15 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
     gsap.ticker.add(onTick);
     gsap.ticker.lagSmoothing(0);
 
+    // Колесо монтируется лениво и сдвигает высоту героя — пересчитать позиции
+    // скролл-триггеров, иначе сцены ниже сработают не на тех точках (§11-C1).
+    const raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+    const onLoad = () => ScrollTrigger.refresh();
+    window.addEventListener("load", onLoad);
+
     return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("load", onLoad);
       gsap.ticker.remove(onTick);
       lenis.destroy();
     };
