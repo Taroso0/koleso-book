@@ -46,3 +46,13 @@ next-env.d.ts
 # Python
 __pycache__/
 *.pyc
+
+# design-sync (claude.ai/design): стейдж-конвертер, сборка, регенерируемые ассеты, машинное состояние.
+# Durable-инпуты, которые КОММИТЯТСЯ: config.json, NOTES.md, conventions.md, entry.tsx,
+# harvest-assets.mjs, previews/, overrides/.
+/.ds-sync/
+/ds-bundle/
+/.design-sync/.cache/
+/.design-sync/learnings/
+/.design-sync/node_modules/
+/.design-sync/assets/

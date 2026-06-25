@@ -1,0 +1,15 @@
+{
+  "pkg": "kirilov",
+  "globalName": "kirilov",
+  "shape": "package",
+  "buildCmd": "npm run build && node .design-sync/harvest-assets.mjs",
+  "tsconfig": "./tsconfig.json",
+  "cssEntry": ".design-sync/assets/styles.css",
+  "componentSrcMap": { "Button": "components/ui/button.tsx" },
+  "guidelinesGlob": ["docs/концепция.md"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "dtsPropsFor": {
+    "Button": "/** Визуальный вариант. */\nvariant?: \"default\" | \"outline\" | \"secondary\" | \"ghost\" | \"destructive\" | \"link\";\n/** Размер; icon* — квадратная кнопка только под иконку. */\nsize?: \"default\" | \"xs\" | \"sm\" | \"lg\" | \"icon\" | \"icon-xs\" | \"icon-sm\" | \"icon-lg\";\n/** Рендерить как дочерний элемент (Radix Slot) вместо <button>. */\nasChild?: boolean;\nchildren?: React.ReactNode;\nclassName?: string;\ndisabled?: boolean;\ntype?: \"button\" | \"submit\" | \"reset\";\nonClick?: React.MouseEventHandler<HTMLButtonElement>;\n\"aria-label\"?: string;"
+  },
+  "projectId": "e0f3243c-8da7-432f-82c9-fabc7c616e25"
+}
