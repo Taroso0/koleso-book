@@ -19,7 +19,7 @@ type FogRevealProps = {
 export function FogReveal({
   children,
   className,
-  blur = 10,
+  blur = 22, // стартовое размытие, px — больше = заметнее «туман»
   start = "top 80%",
 }: FogRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -40,7 +40,7 @@ export function FogReveal({
       gsap.from(el, {
         opacity: 0,
         filter: `blur(${blur}px)`,
-        duration: 1.0,
+        duration: 1.3, // длительность «выхода из тумана»
         ease: "power2.out",
         scrollTrigger: {
           trigger: el,
