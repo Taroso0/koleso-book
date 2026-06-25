@@ -7,6 +7,7 @@ import type { WheelGraph, WheelNode } from "@/lib/graph";
 import { reweight } from "@/lib/graph";
 import { WHEEL_VIEW, computeWheelLayout, type WheelLayout } from "@/lib/wheelLayout";
 import { useReducedMotionSafe } from "@/components/motion/useReducedMotionSafe";
+import { useZachin } from "@/components/haunted/zachinContext";
 import { cn } from "@/lib/utils";
 import { ThemeNode, type NodeState } from "./ThemeNode";
 import { StoryNode } from "./StoryNode";
@@ -27,6 +28,7 @@ export function WheelCanvas({
   layout: WheelLayout;
 }) {
   const router = useRouter();
+  const zachin = useZachin();
   const reduced = useReducedMotionSafe();
 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -112,8 +114,18 @@ export function WheelCanvas({
   const themeSide = (id: string): "start" | "end" =>
     (layout[id]?.x ?? 0) >= WHEEL_VIEW.width / 2 ? "start" : "end";
 
+  // Активация рассказа: «первая строка как событие» (зачин) → переход в Читальню.
+  // Фолбэк на прямой переход, если провайдера зачина нет (граф вне «Витрины»).
   const activate = (node: WheelNode) => {
-    if (node.kind === "story" && node.book) {
+    if (node.kind !== "story" || !node.book) return;
+    if (zachin) {
+      zachin.playOpening({
+        firstLine: node.firstLine ?? node.label,
+        slug: node.id,
+        book: node.book,
+        title: node.label,
+      });
+    } else {
       router.push(`/read/${node.book}/${node.id}`);
     }
   };
