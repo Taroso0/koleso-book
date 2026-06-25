@@ -17,7 +17,7 @@ type GlitchTextProps = {
 // текст. Базовый слой доступен (реальный текст); клоны — aria-hidden. Под
 // reduced-motion — статичный текст. WCAG 2.3.1: один разряд, без цикла, мелкие
 // смещения (нет >3 вспышек/сек).
-const GLITCH_MS = 420;
+const GLITCH_MS = 630; // «разряд» — сдержанный темп (в 1.5× медленнее правок)
 const HOLD_MS = 280;
 
 export function GlitchText({ text, className, play = true, onDone }: GlitchTextProps) {

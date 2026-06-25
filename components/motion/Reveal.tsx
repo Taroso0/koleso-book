@@ -32,25 +32,37 @@ export function Reveal({
 
   useIsoLayoutEffect(() => {
     const el = ref.current;
-    if (!el || reduced) return; // финальное состояние уже отрисовано
+    if (!el) return;
+
+    const targets = stagger
+      ? gsap.utils.toArray<HTMLElement>(el.children)
+      : [el];
+
+    if (reduced) {
+      // Тумблер reduced-motion мог быть включён в рантайме — снять инлайновые
+      // стили GSAP, чтобы контент гарантированно остался видимым (а не «исчез»).
+      gsap.set(targets, { clearProps: "opacity,transform" });
+      return;
+    }
 
     gsap.registerPlugin(ScrollTrigger);
+    // from-твин: revert() возвращает к ВИДИМОМУ конечному состоянию (а set+to
+    // откатывал бы к opacity:0 — отсюда был баг исчезновения при тумблере).
     const ctx = gsap.context(() => {
-      const targets = stagger
-        ? gsap.utils.toArray<HTMLElement>(el.children)
-        : el;
-      gsap.set(targets, { opacity: 0, y });
-      gsap.to(targets, {
-        opacity: 1,
-        y: 0,
+      gsap.from(targets, {
+        opacity: 0,
+        y,
         duration: 0.6,
         ease: "power2.out",
         stagger,
         scrollTrigger: { trigger: el, start, once, invalidateOnRefresh: true },
       });
     }, el);
+    // Зажечь триггеры, уже находящиеся в кадре (важно при включении движения
+    // обратно тумблером, когда блок уже на экране — иначе остался бы скрытым).
+    ScrollTrigger.refresh();
 
-    return () => ctx.revert(); // вернуть финальное состояние, снять триггеры
+    return () => ctx.revert();
   }, [reduced, y, stagger, start, once]);
 
   return (
