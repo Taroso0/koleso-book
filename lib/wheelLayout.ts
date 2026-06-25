@@ -24,10 +24,11 @@ type LayoutOpts = {
   height?: number;
   seed?: number;
   iterations?: number;
+  initial?: WheelLayout; // тёплый старт: позиции рассказов из готовой укладки
 };
 
 type SimNode = SimulationNodeDatum & { id: string; kind: "theme" | "story" };
-type SimLink = { source: string; target: string };
+type SimLink = { source: string; target: string; weight: number };
 
 /** Детерминированный LCG-источник случайности в [0, 1). */
 function lcg(seed: number): () => number {
@@ -68,19 +69,21 @@ export function computeWheelLayout(
         fy: cy + themeRadius * Math.sin(angle),
       };
     }),
-    ...storyNodes.map(
-      (s): SimNode => ({
+    ...storyNodes.map((s): SimNode => {
+      const seed = opts.initial?.[s.id];
+      return {
         id: s.id,
         kind: "story",
-        x: cx + (rng() - 0.5) * 60, // детерминированный старт у центра
-        y: cy + (rng() - 0.5) * 60,
-      }),
-    ),
+        x: seed?.x ?? cx + (rng() - 0.5) * 60, // тёплый старт или детерм. джиттер
+        y: seed?.y ?? cy + (rng() - 0.5) * 60,
+      };
+    }),
   ];
 
   const links: SimLink[] = graph.links.map((l) => ({
     source: l.source,
     target: l.target,
+    weight: l.weight,
   }));
 
   const simulation = forceSimulation<SimNode, SimLink>(nodes)
@@ -90,7 +93,8 @@ export function computeWheelLayout(
       forceLink<SimNode, SimLink>(links)
         .id((d) => d.id)
         .distance(90)
-        .strength(0.45),
+        // вес=1 → 0.45 (база неизменна); усиленные рёбра тянут сильнее (до 0.9)
+        .strength((l) => Math.min(0.9, 0.45 * l.weight)),
     )
     .force("charge", forceManyBody<SimNode>().strength(-150))
     .force("collide", forceCollide<SimNode>(20))
