@@ -142,9 +142,12 @@ export default function VitrinaHome() {
             Третья книга растёт на глазах: фрагменты, черновики, заметки и новые
             иллюстрации. Building-in-public для художественной прозы.
           </p>
-          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground/70">
-            Скоро
-          </p>
+          <Link
+            href="/workshop"
+            className="mt-4 inline-block font-sans text-sm underline-offset-4 hover:underline"
+          >
+            Зайти в Мастерскую →
+          </Link>
         </Reveal>
       </section>
 
