@@ -4,8 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useReducedMotionSafe } from "@/components/motion/useReducedMotionSafe";
+import dynamic from "next/dynamic";
 import { ZachinContext, type OpeningStory } from "./zachinContext";
-import { StoryOpening } from "./StoryOpening";
+
+// Лениво (§10): SplitText/GlitchText грузятся только когда зачин реально играет (по
+// клику в «Колесе»), а не на каждой странице «Витрины». Trim initial JS Витрины.
+const StoryOpening = dynamic(
+  () => import("./StoryOpening").then((m) => m.StoryOpening),
+  { ssr: false },
+);
 
 // Размещение зачина (решение B): «первая строка как событие» проигрывается при
 // входе из «Колеса» — интерстишл поверх «Витрины», затем переход в Читальню.
