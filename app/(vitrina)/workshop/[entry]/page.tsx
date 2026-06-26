@@ -25,7 +25,17 @@ export async function generateMetadata({
 }) {
   const { entry } = await params;
   const e = getWorkshopEntry(entry);
-  return { title: e ? `${e.title} — Мастерская` : "Мастерская" };
+  if (!e) return { title: "Мастерская" };
+  const raw = e.summary ?? e.body.replace(/\s+/g, " ").trim();
+  const description = raw.length > 157 ? raw.slice(0, 157).trimEnd() + "…" : raw;
+  const url = `/workshop/${e.slug}`;
+  return {
+    title: `${e.title} — Мастерская`,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: "article", title: e.title, description, url },
+    twitter: { card: "summary_large_image", title: e.title, description },
+  };
 }
 
 const themeLabel = new Map(themes.map((t) => [t.id, t.label]));

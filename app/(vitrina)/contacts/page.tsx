@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { farewell, contacts } from "@/content/contacts";
 
-export const metadata = { title: "Контакты — Боковым зрением" };
+export const metadata = {
+  title: "Контакты — Боковым зрением",
+  description: "Связаться с автором. Тихий финал — спокойное завершение пути.",
+  alternates: { canonical: "/contacts" },
+  openGraph: {
+    title: "Контакты — Боковым зрением",
+    description: "Связаться с автором.",
+    url: "/contacts",
+  },
+};
 
 // «Тихий финал» (§9): минимум движения и света. Полностью статичная страница в
 // ночной палитре («Офис ночью» — токены .dark), один тёплый натриевый акцент

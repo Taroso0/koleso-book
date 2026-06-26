@@ -4,7 +4,17 @@ import { AccentLine } from "@/components/motion/AccentLine";
 import { WorkshopCard } from "@/components/workshop/WorkshopCard";
 import { getWorkshopEntries } from "@/lib/workshop";
 
-export const metadata = { title: "Мастерская — Боковым зрением" };
+export const metadata = {
+  title: "Мастерская — Боковым зрением",
+  description:
+    "Третья книга растёт на глазах: фрагменты, черновики, заметки и новые иллюстрации. Building-in-public для художественной прозы.",
+  alternates: { canonical: "/workshop" },
+  openGraph: {
+    title: "Мастерская — Боковым зрением",
+    description: "Третья книга растёт на глазах: фрагменты, черновики, заметки, иллюстрации.",
+    url: "/workshop",
+  },
+};
 
 // «Мастерская» (§9/§11-A3): building-in-public 3-й книги. Раздел «Витрины» (моушн
 // допустим), но проза записей статична (§5). Контент файловый (content/workshop/*),

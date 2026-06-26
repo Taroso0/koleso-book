@@ -19,9 +19,19 @@ export async function generateMetadata({
 }: {
   params: Promise<{ book: string; story: string }>;
 }) {
-  const { story } = await params;
+  const { book, story } = await params;
   const s = getStory(story);
-  return { title: s ? `${s.title} — Читальня` : "Читальня" };
+  if (!s) return { title: "Читальня" };
+  const description =
+    s.firstLine.length > 157 ? s.firstLine.slice(0, 157).trimEnd() + "…" : s.firstLine;
+  const url = `/read/${book}/${story}`;
+  return {
+    title: `${s.title} — Читальня`,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: "article", title: s.title, description, url },
+    twitter: { card: "summary_large_image", title: s.title, description },
+  };
 }
 
 export default async function StoryPage({

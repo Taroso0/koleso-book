@@ -17,7 +17,23 @@ export async function generateMetadata({
 }) {
   const { book } = await params;
   const meta = getBooks().find((b) => b.id === book);
-  return { title: meta ? `${meta.title} — Читальня` : "Читальня" };
+  if (!meta) return { title: "Читальня" };
+  const description = `«${meta.title}» (${meta.year}) — ${meta.stories.length} рассказов Евгения Кирилова. Читать в Читальне.`;
+  const url = `/read/${meta.id}`;
+  return {
+    title: `${meta.title} — Читальня`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "book",
+      authors: ["Евгений Кирилов"],
+      releaseDate: String(meta.year),
+      title: meta.title,
+      description,
+      url,
+    },
+    twitter: { card: "summary_large_image", title: meta.title, description },
+  };
 }
 
 // Страница книги: список рассказов с превью первой строки. Порядок — из books/*.json.
@@ -31,8 +47,22 @@ export default async function BookPage({
   if (!meta) notFound();
   const bySlug = new Map(getAllStories().map((s) => [s.slug, s]));
 
+  const bookLd = {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    name: meta.title,
+    author: { "@type": "Person", name: "Евгений Кирилов" },
+    datePublished: String(meta.year),
+    inLanguage: "ru",
+    bookFormat: "https://schema.org/Hardcover",
+  };
+
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-6 py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(bookLd) }}
+      />
       <header className="flex items-center justify-between gap-4 border-b border-border pb-4">
         <Link
           href="/read"

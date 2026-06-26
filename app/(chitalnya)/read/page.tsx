@@ -2,7 +2,17 @@ import Link from "next/link";
 import { getBooks, getAllStories } from "@/lib/content";
 import { ContinueReading } from "@/components/reader/ContinueReading";
 
-export const metadata = { title: "Читальня — Боковым зрением" };
+export const metadata = {
+  title: "Читальня — Боковым зрением",
+  description:
+    "Две книги, тридцать четыре рассказа Евгения Кирилова. Типографика-first среда чтения с нативным скроллом.",
+  alternates: { canonical: "/read" },
+  openGraph: {
+    title: "Читальня — Боковым зрением",
+    description: "Две книги, тридцать четыре рассказа Евгения Кирилова.",
+    url: "/read",
+  },
+};
 
 // Индекс «Читальни»: список книг и рассказов (порядок — из content/books/*.json). SSG.
 export default function ReadIndex() {
