@@ -28,7 +28,7 @@ export default function VitrinaHome() {
   );
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16 lg:max-w-5xl">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-6 py-16 lg:max-w-5xl">
       {/* Герой — Колесо. Покой по умолчанию: не анимируем (граф фейдится сам). */}
       <header className="mx-auto max-w-2xl space-y-2">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -76,7 +76,7 @@ export default function VitrinaHome() {
             системном уведомлении. Тёпло, иронично, по-человечески — а не
             торжественно.
           </p>
-          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground/70">
+          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             Скоро
           </p>
         </Reveal>

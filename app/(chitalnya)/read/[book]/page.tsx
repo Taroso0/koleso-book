@@ -32,7 +32,7 @@ export default async function BookPage({
   const bySlug = new Map(getAllStories().map((s) => [s.slug, s]));
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-6 py-16">
       <header className="flex items-center justify-between gap-4 border-b border-border pb-4">
         <Link
           href="/read"

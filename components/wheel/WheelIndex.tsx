@@ -35,7 +35,9 @@ export function WheelIndex({ graph }: { graph: WheelGraph }) {
               className="inline-flex items-center gap-1 rounded-sm border border-border px-2.5 py-1 text-muted-foreground transition-colors hover:border-sodium/60 hover:text-foreground"
             >
               {theme.label}
-              <span className="tabular-nums opacity-60">{stories.length}</span>
+              <span className="tabular-nums text-muted-foreground">
+                {stories.length}
+              </span>
             </a>
           </li>
         ))}

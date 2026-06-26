@@ -10,7 +10,7 @@ export function ReduceMotionToggle() {
       type="button"
       aria-pressed={reduceEffects}
       onClick={() => setReduceEffects(!reduceEffects)}
-      className="rounded-md border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="rounded-md border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
     >
       {reduceEffects ? "движение: снижено" : "снизить движение"}
     </button>

@@ -44,7 +44,7 @@ export default async function WorkshopEntryPage({
   const illustration = getWorkshopIllustration(e);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
       <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
         <Link href="/workshop" className="hover:text-foreground">
           ← Мастерская

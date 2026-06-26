@@ -26,6 +26,14 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: READING_INIT }} />
+        {/* Обход повторяющейся навигации (WCAG 2.4.1): первой по Tab — ссылка к
+            содержимому; видима только при фокусе, ведёт на <main id="main"> страницы. */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10000] focus:rounded-sm focus:border focus:border-border focus:bg-background focus:px-4 focus:py-2 focus:font-mono focus:text-sm focus:text-foreground"
+        >
+          К содержимому
+        </a>
         <MotionProvider>{children}</MotionProvider>
       </body>
     </html>

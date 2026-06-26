@@ -9,7 +9,7 @@ export const metadata = { title: "Контакты — Боковым зрени
 // тривиален. Контакты — data-driven (content/contacts.ts), значения за автором.
 export default function ContactsPage() {
   return (
-    <main className="dark flex min-h-dvh flex-col bg-background text-foreground">
+    <main id="main" tabIndex={-1} className="dark flex min-h-dvh flex-col bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-6 py-24">
         <h1 className="sr-only">Контакты</h1>
 

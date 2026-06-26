@@ -10,7 +10,7 @@ export default function ReadIndex() {
   const bySlug = new Map(getAllStories().map((s) => [s.slug, s]));
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-6 py-16">
       <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           ← Витрина

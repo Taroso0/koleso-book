@@ -262,10 +262,13 @@ export function WheelCanvas({
               transition={spring}
             >
               {focused && (
+                // Контрастное кольцо фокуса (WCAG 2.4.11): --foreground даёт ≥3:1 на
+                // светлом фоне (натриевое давало ~2:1). Бренд-цвет несёт сам узел
+                // (активный узел заливается sodium).
                 <circle
-                  r={node.kind === "theme" ? 15 : 11}
-                  strokeWidth={1.5}
-                  className="fill-none stroke-sodium"
+                  r={node.kind === "theme" ? 16 : 12}
+                  strokeWidth={2}
+                  className="fill-none stroke-foreground"
                 />
               )}
               {node.kind === "theme" ? (

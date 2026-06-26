@@ -13,7 +13,7 @@ export default function WorkshopIndex() {
   const entries = getWorkshopEntries();
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-6 py-16">
       <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           ← Витрина
@@ -43,7 +43,7 @@ export default function WorkshopIndex() {
           <p className="font-serif text-lg leading-prose text-muted-foreground">
             Здесь пока тихо. Хотя кто-то только что вышел.
           </p>
-          <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground/70">
+          <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             Стол ещё накрывается
           </p>
         </div>
