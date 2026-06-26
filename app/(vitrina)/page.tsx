@@ -157,6 +157,12 @@ export default function VitrinaHome() {
             <Link href="/read">Войти в Читальню</Link>
           </Button>
           <ReduceMotionToggle />
+          <Link
+            href="/contacts"
+            className="ml-auto font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Контакты
+          </Link>
         </footer>
       </Reveal>
     </main>
