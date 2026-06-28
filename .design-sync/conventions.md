@@ -5,7 +5,7 @@
 системы». Полное описание языка — `guidelines/docs/концепция.md`.
 
 ## Обёртка и тема
-- Провайдер **не нужен** — `Button` самодостаточен. Стили приходят из замыкания
+- Провайдер **не нужен** — компоненты самодостаточны. Стили приходят из замыкания
   `styles.css`, которое подключается к каждому дизайну автоматически.
 - Тёмная тема — класс **`.dark`** на любом предке (токены переопределяются каскадом);
   светлая — по умолчанию.
@@ -31,7 +31,9 @@ CSS-переменные — **используйте их для собстве
 
 ## Где правда
 - Стили: `styles.css` → `fonts/fonts.css` + `_ds_bundle.css` (`:root`/`.dark` токены + утилиты).
-- Компонент: `components/general/Button/Button.prompt.md` и `Button.d.ts`.
+- Компоненты: `components/<группа>/<Имя>/<Имя>.prompt.md` и `<Имя>.d.ts` — контракт и примеры
+  каждого. Группы: `general` (Button), `workshop` (KindBadge, WorkshopCard),
+  `reader` (ProseBody, IllustrationPlate), `haunted` (GlitchText, StoryOpening), `wheel` (WheelIndex).
 - Язык бренда: `guidelines/docs/концепция.md`.
 
 ## Button — API
@@ -41,6 +43,19 @@ CSS-переменные — **используйте их для собстве
 - `asChild` — рендер как дочерний элемент (например, `<a>` в роли кнопки).
 - Иконка: положите `<svg>` ребёнком (авто-размер); для ведущей/замыкающей —
   атрибут `data-icon="inline-start" | "inline-end"`.
+
+## Остальные компоненты — API (детали в `<Имя>.d.ts` / `.prompt.md`)
+- **KindBadge** — mono-чип вида записи. `kind`: `fragment`·`draft`·`note`·`illustration`; `className`.
+- **ProseBody** — serif-проза («душа»). `body: string`: абзацы через пустую строку, отдельная
+  строка `***` = разделитель сцен, `*…*` = курсив. Оборачивайте в `font-family: var(--font-prose)`.
+- **GlitchText** — «системный регистр». `text`, `play?` (разряд-анимация, по умолч. `true`),
+  `className`, `onDone?`.
+- **StoryOpening** — «первая строка как событие». `text`, `variant?` (`rise`·`cascade`·`glitch`),
+  `slug?`, `className`, `onDone?`. У движения есть статический паритет (reduced-motion).
+- **WorkshopCard / IllustrationPlate / WheelIndex** — редакционные, данные передаются пропом:
+  `WorkshopCard entry={…}`, `IllustrationPlate illustration={…}`, `WheelIndex graph={{nodes,links}}`
+  (структуры — в `.d.ts`). В бандле `next/link` → нативный `<a>`, `next/image` → `<img>`: ссылки и
+  картинки — обычные элементы, задавайте реальные `href`/`src`.
 
 ## Пример
 ```tsx

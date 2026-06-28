@@ -3,13 +3,29 @@
   "globalName": "kirilov",
   "shape": "package",
   "buildCmd": "npm run build && node .design-sync/harvest-assets.mjs",
-  "tsconfig": "./tsconfig.json",
+  "tsconfig": "./.design-sync/tsconfig.bundle.json",
   "cssEntry": ".design-sync/assets/styles.css",
-  "componentSrcMap": { "Button": "components/ui/button.tsx" },
+  "componentSrcMap": {
+    "Button": "components/ui/button.tsx",
+    "KindBadge": "components/workshop/KindBadge.tsx",
+    "ProseBody": "components/reader/ProseBody.tsx",
+    "GlitchText": "components/haunted/GlitchText.tsx",
+    "StoryOpening": "components/haunted/StoryOpening.tsx",
+    "WorkshopCard": "components/workshop/WorkshopCard.tsx",
+    "IllustrationPlate": "components/reader/IllustrationPlate.tsx",
+    "WheelIndex": "components/wheel/WheelIndex.tsx"
+  },
   "guidelinesGlob": ["docs/концепция.md"],
   "readmeHeader": ".design-sync/conventions.md",
   "dtsPropsFor": {
-    "Button": "/** Визуальный вариант. */\nvariant?: \"default\" | \"outline\" | \"secondary\" | \"ghost\" | \"destructive\" | \"link\";\n/** Размер; icon* — квадратная кнопка только под иконку. */\nsize?: \"default\" | \"xs\" | \"sm\" | \"lg\" | \"icon\" | \"icon-xs\" | \"icon-sm\" | \"icon-lg\";\n/** Рендерить как дочерний элемент (Radix Slot) вместо <button>. */\nasChild?: boolean;\nchildren?: React.ReactNode;\nclassName?: string;\ndisabled?: boolean;\ntype?: \"button\" | \"submit\" | \"reset\";\nonClick?: React.MouseEventHandler<HTMLButtonElement>;\n\"aria-label\"?: string;"
+    "Button": "/** Визуальный вариант. */\nvariant?: \"default\" | \"outline\" | \"secondary\" | \"ghost\" | \"destructive\" | \"link\";\n/** Размер; icon* — квадратная кнопка только под иконку. */\nsize?: \"default\" | \"xs\" | \"sm\" | \"lg\" | \"icon\" | \"icon-xs\" | \"icon-sm\" | \"icon-lg\";\n/** Рендерить как дочерний элемент (Radix Slot) вместо <button>. */\nasChild?: boolean;\nchildren?: React.ReactNode;\nclassName?: string;\ndisabled?: boolean;\ntype?: \"button\" | \"submit\" | \"reset\";\nonClick?: React.MouseEventHandler<HTMLButtonElement>;\n\"aria-label\"?: string;",
+    "KindBadge": "/** Вид записи «Мастерской». */\nkind: \"fragment\" | \"draft\" | \"note\" | \"illustration\";\nclassName?: string;",
+    "ProseBody": "/** Тело прозы: абзацы через пустую строку; «***» — разделитель сцен; *…* — курсив. */\nbody: string;",
+    "GlitchText": "/** Текст «разряда» («системный регистр»). */\ntext: string;\nclassName?: string;\n/** Запустить анимацию разряда (по умолчанию true). На статичном превью при false — чистый текст. */\nplay?: boolean;\nonDone?: () => void;",
+    "StoryOpening": "/** Текст первой строки («первая строка как событие»). */\ntext: string;\n/** Источник детерминированного варианта, если variant не задан. */\nslug?: string;\n/** Шаблон кинетики зачина. */\nvariant?: \"rise\" | \"cascade\" | \"glitch\";\nclassName?: string;\nonDone?: () => void;",
+    "WorkshopCard": "/** Запись ленты «Мастерской». */\nentry: {\n  slug: string;\n  title: string;\n  kind: \"fragment\" | \"draft\" | \"note\" | \"illustration\";\n  date: string;\n  summary?: string;\n  themes?: string[];\n  image?: string;\n  imageWidth?: number;\n  imageHeight?: number;\n  imageAlt?: string;\n  published?: boolean;\n  body: string;\n};",
+    "IllustrationPlate": "/** Иллюстрация-плашка (editorial, «с воздухом»). */\nillustration: {\n  src: string;\n  width: number;\n  height: number;\n  alt: string;\n  artist?: string;\n};\n/** Приоритетная загрузка (LCP). */\npriority?: boolean;",
+    "WheelIndex": "/** Граф «Колеса»: узлы (темы/рассказы) + рёбра членства «рассказ ↔ тема». */\ngraph: {\n  nodes: Array<{ id: string; kind: \"theme\" | \"story\"; label: string; book?: string; firstLine?: string }>;\n  links: Array<{ source: string; target: string; weight: number }>;\n};"
   },
   "projectId": "e0f3243c-8da7-432f-82c9-fabc7c616e25"
 }
