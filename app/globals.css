@@ -66,9 +66,9 @@
   --destructive: oklch(0.55 0.2 27);
   --border: oklch(0.88 0.007 160);
   --input: oklch(0.88 0.007 160);
-  --ring: oklch(0.72 0.16 62); /* фокус «светится» натриевым */
+  --ring: oklch(0.72 0.15 84); /* тёплый тон «Накала», но контраст-безопасная светлота */
 
-  --sodium: oklch(0.72 0.16 62);
+  --sodium: oklch(0.8 0.135 84); /* «Накал» — тёплая лампа (янтарь), §4 «офисная готика» */
   --paper: oklch(0.93 0.03 88);
   --concrete: oklch(0.8 0.006 250);
   --monitor: oklch(0.62 0.12 240);
@@ -93,9 +93,9 @@
   --destructive: oklch(0.62 0.19 25);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.16 62);
+  --ring: oklch(0.72 0.15 84);
 
-  --sodium: oklch(0.74 0.16 62);
+  --sodium: oklch(0.8 0.135 84); /* «Накал» — единый тёплый акцент со светлой темой */
   --paper: oklch(0.3 0.02 88);
   --concrete: oklch(0.4 0.008 250);
   --monitor: oklch(0.66 0.13 240);
@@ -188,4 +188,400 @@ html[data-reading-theme="dark"] .reading-root {
    после монтирования отрисовкой управляет React (показывает «страницы»). */
 html[data-reading-mode="paged"] [data-reading-content] {
   visibility: hidden;
+}
+
+/* ════════ «Тёплое окно» — hero «Витрины» (§4/§8/§10) ════════
+   Арт-директированный первый экран «офисной готики»: одинокое тёплое окно (горит с
+   ПЕРВОГО пикселя, не на :hover) в холодной ночной громаде здания — свет по Хопперу.
+   Корень несёт класс .dark → --foreground светлый, видимый фокус-индикатор работает на
+   тёмной сцене (как в /contacts). Движение — только под [data-haunt="true"] (ставит
+   useHauntedCapability при level=full) И prefers-reduced-motion: no-preference; выключено
+   → сцена статична и полностью читаема (паритет, не «выключено»). Зерно — глобальный
+   GrainOverlay из (vitrina)/layout, здесь НЕ дублируем. */
+.warm-hero {
+  /* холодная институциональная ночь (Хоппер) — локальные токены сцены */
+  --night: oklch(0.185 0.014 256);
+  --wall: oklch(0.215 0.015 256);
+  --pane: oklch(0.255 0.016 256);
+  --pane-line: oklch(0.42 0.02 256 / 0.5);
+  --cold-lit: oklch(0.5 0.07 240); /* холодное «системное» свечение монитора */
+  --ink: oklch(0.94 0.012 95); /* тёплый почти-белый — текст «в свету» */
+  --ink-soft: oklch(0.74 0.02 250);
+  /* тёплый ramp «Накала» вокруг --sodium (точные oklch хендоффа) */
+  --acc-hot: oklch(0.93 0.1 90);
+  --acc-warm: oklch(0.84 0.14 80);
+  --acc-deep: oklch(0.66 0.15 70);
+  --glow: 0.7; /* сила свечения окна (0..1) */
+
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--ink);
+  background: radial-gradient(
+    135% 120% at 70% 16%,
+    oklch(0.27 0.02 256),
+    var(--night) 52%,
+    oklch(0.135 0.012 256) 100%
+  );
+}
+
+/* холодная громада: стена с сеткой окон */
+.warm-hero .facade {
+  position: absolute;
+  top: -2%;
+  right: 0;
+  width: 47%;
+  height: 104%;
+  background: linear-gradient(105deg, oklch(0.17 0.013 256), var(--wall) 60%);
+  border-left: 1px solid oklch(0.1 0.01 256);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 1fr;
+  gap: clamp(9px, 1.5vw, 20px);
+  padding: clamp(20px, 3.4vw, 52px);
+  align-content: stretch;
+  box-shadow: -30px 0 80px -40px #000 inset;
+}
+.warm-hero .pane {
+  background: linear-gradient(180deg, var(--pane), oklch(0.225 0.014 256));
+  border: 1px solid var(--pane-line);
+  border-radius: 1px;
+  box-shadow: 0 1px 0 oklch(0.32 0.02 256) inset, 0 -6px 14px -8px #000 inset;
+}
+.warm-hero .pane.cold {
+  background: linear-gradient(180deg, var(--cold-lit), oklch(0.3 0.04 240) 70%);
+  box-shadow: 0 0 14px -2px oklch(0.55 0.08 240 / 0.5),
+    0 1px 0 oklch(0.6 0.06 240 / 0.4) inset;
+}
+.warm-hero .pane.cold::after {
+  content: "";
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 3px,
+    oklch(0 0 0 / 0.12) 3px 4px
+  );
+}
+
+/* единственное тёплое окно — горит статично с первого пикселя */
+.warm-hero .warm {
+  position: absolute;
+  top: 19%;
+  left: 50.5%;
+  width: clamp(150px, 16.5vw, 244px);
+  aspect-ratio: 5 / 7;
+  z-index: 5;
+}
+.warm-hero .frame {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 5px;
+  padding: 6px;
+  border-radius: 2px;
+  background: linear-gradient(160deg, var(--acc-hot), var(--acc-warm) 46%, var(--acc-deep));
+  box-shadow: 0 0 0 1px var(--acc-deep), 0 0 0 5px oklch(0.16 0.012 256),
+    0 0 0 6px oklch(0.34 0.02 256 / 0.7), 0 14px 40px -10px oklch(0 0 0 / 0.6);
+}
+.warm-hero .frame span {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--acc-hot) 80%, white 0%),
+    var(--acc-warm)
+  );
+  box-shadow: 0 0 8px color-mix(in oklab, var(--acc-hot) 60%, transparent) inset;
+  mix-blend-mode: screen;
+  opacity: 0.96;
+}
+.warm-hero .bloom {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 360%;
+  height: 360%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--acc-warm) 80%, transparent),
+    transparent 72%
+  );
+  filter: blur(8px);
+  opacity: var(--glow);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* тёплый свет, заливающий холодный воздух (Хоппер) + косой клин на «пол» */
+.warm-hero .ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    95% 80% at 56% 24%,
+    color-mix(in oklab, var(--acc-warm) 24%, transparent),
+    transparent 58%
+  );
+  opacity: var(--glow);
+  mix-blend-mode: screen;
+}
+.warm-hero .spill {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  left: 6%;
+  top: 24%;
+  width: 70%;
+  height: 78%;
+  background: radial-gradient(
+    60% 70% at 88% 6%,
+    color-mix(in oklab, var(--acc-warm) 30%, transparent),
+    transparent 66%
+  );
+  transform: rotate(-6deg);
+  opacity: calc(var(--glow) * 0.8);
+  mix-blend-mode: screen;
+}
+.warm-hero .vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 95% at 56% 30%,
+    transparent 52%,
+    oklch(0.08 0.01 256 / 0.72) 100%
+  );
+}
+
+/* созвездие «Колесо» — точка входа, не лаборатория. Лёгкий декоративный SVG. */
+.warm-hero .wheel-hint {
+  position: absolute;
+  z-index: 4;
+  right: 5.5%;
+  bottom: 5%;
+  width: clamp(180px, 21vw, 290px);
+  aspect-ratio: 1;
+  opacity: 0.62;
+  pointer-events: none;
+}
+.warm-hero .wheel-hint .cap {
+  position: absolute;
+  left: 6px;
+  bottom: -2px;
+  font-family: var(--font-mono-accent), ui-monospace, monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+.warm-hero .st-link {
+  stroke: oklch(0.85 0.01 250 / 0.12);
+  stroke-width: 1;
+}
+.warm-hero .st-link.lit {
+  stroke: var(--sodium);
+  opacity: 0.9;
+  stroke-width: 1.4;
+}
+.warm-hero .st-node {
+  fill: oklch(0.72 0.012 250 / 0.5);
+}
+.warm-hero .th-ring {
+  fill: var(--night);
+  stroke: oklch(0.82 0.01 250 / 0.55);
+  stroke-width: 1.4;
+}
+.warm-hero .th-ring.lit {
+  fill: var(--sodium);
+  stroke: var(--sodium);
+}
+.warm-hero .th-label {
+  font-family: var(--font-mono-accent), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  fill: oklch(0.74 0.02 250 / 0.85);
+}
+.warm-hero .th-label.lit {
+  fill: oklch(0.95 0.012 95);
+  font-weight: 600;
+}
+.warm-hero .breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* текст как материя — реальный контент сцены */
+.warm-hero .copy {
+  position: absolute;
+  z-index: 7;
+  left: clamp(28px, 6vw, 104px);
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: min(46vw, 560px);
+}
+.warm-hero .kicker {
+  font-family: var(--font-mono-accent), ui-monospace, monospace;
+  font-size: clamp(0.6rem, 0.86vw, 0.74rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sodium);
+  margin: 0 0 clamp(20px, 3vh, 34px);
+  line-height: 1.9;
+  text-shadow: 0 0 18px color-mix(in oklab, var(--sodium) 50%, transparent);
+}
+.warm-hero .cur {
+  display: inline-block;
+  color: var(--sodium);
+}
+.warm-hero .title {
+  font-family: var(--font-prose), Georgia, serif;
+  font-weight: 420;
+  color: var(--ink);
+  font-size: clamp(3rem, 8.4vw, 6.6rem);
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+  margin: 0;
+  max-width: 13ch;
+  text-wrap: balance;
+  text-shadow: 0 0 60px color-mix(in oklab, var(--acc-warm) 22%, transparent);
+}
+.warm-hero .accent-rule {
+  height: 2px;
+  width: clamp(96px, 11vw, 150px);
+  background: var(--sodium);
+  margin: clamp(22px, 3.2vh, 34px) 0 0;
+  box-shadow: 0 0 14px var(--sodium);
+  border-radius: 2px;
+}
+.warm-hero .sub {
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: clamp(1rem, 1.45vw, 1.22rem);
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 42ch;
+  margin: clamp(18px, 2.6vh, 26px) 0 0;
+}
+.warm-hero .foot {
+  display: flex;
+  gap: clamp(20px, 3vw, 40px);
+  margin: clamp(26px, 4vh, 44px) 0 0;
+  flex-wrap: wrap;
+}
+.warm-hero .foot a {
+  font-family: var(--font-mono-accent), ui-monospace, monospace;
+  font-size: clamp(0.58rem, 0.8vw, 0.7rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.warm-hero .foot a b {
+  color: var(--sodium);
+  font-weight: 600;
+}
+.warm-hero .foot a:hover {
+  color: var(--ink);
+}
+
+/* ── движение: только «сверхъестественное» и только при «одержимости» ── */
+@keyframes warm-blink {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  48.01%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes warm-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.32);
+  }
+}
+@keyframes warm-flick {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.97;
+  }
+  47% {
+    opacity: 0.84;
+  }
+  48% {
+    opacity: 0.99;
+  }
+  71% {
+    opacity: 0.93;
+  }
+  72% {
+    opacity: 1;
+  }
+}
+@keyframes warm-glow {
+  0%,
+  100% {
+    opacity: var(--glow);
+  }
+  50% {
+    opacity: calc(var(--glow) * 1.18 + 0.04);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .warm-hero[data-haunt="true"] .frame {
+    animation: warm-flick 7s ease-in-out infinite;
+  }
+  .warm-hero[data-haunt="true"] .bloom {
+    animation: warm-glow 7s ease-in-out infinite;
+  }
+  .warm-hero[data-haunt="true"] .cur {
+    animation: warm-blink 1.1s steps(1) infinite;
+  }
+  .warm-hero[data-haunt="true"] .breathe.lit {
+    animation: warm-breathe 3.6s ease-in-out infinite;
+  }
+}
+
+/* ── узкие экраны: сцена стопкой ── */
+@media (max-width: 880px) {
+  .warm-hero .facade {
+    width: 100%;
+    height: 42vh;
+    top: 0;
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .warm-hero .warm {
+    top: 8vh;
+    left: auto;
+    right: 14%;
+    width: 30vw;
+    max-width: 180px;
+  }
+  .warm-hero .wheel-hint {
+    display: none;
+  }
+  .warm-hero .copy {
+    position: relative;
+    top: auto;
+    transform: none;
+    left: auto;
+    margin: 44vh 24px 60px;
+    max-width: none;
+  }
+  .warm-hero .spill,
+  .warm-hero .ambient {
+    height: 60vh;
+  }
 }

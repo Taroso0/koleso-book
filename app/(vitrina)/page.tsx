@@ -4,6 +4,7 @@ import { ReduceMotionToggle } from "@/components/motion/ReduceMotionToggle";
 import { Reveal } from "@/components/motion/Reveal";
 import { AccentLine } from "@/components/motion/AccentLine";
 import { FogReveal } from "@/components/haunted/FogReveal";
+import { WarmWindowHero } from "@/components/vitrina/WarmWindowHero";
 import { WheelIndex } from "@/components/wheel/WheelIndex";
 import { WheelGraph } from "@/components/wheel/WheelGraph";
 import { getAllStories, getBooks } from "@/lib/content";
@@ -28,31 +29,25 @@ export default function VitrinaHome() {
   );
 
   return (
-    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-6 py-16 lg:max-w-5xl">
-      {/* Герой — Колесо. Покой по умолчанию: не анимируем (граф фейдится сам). */}
-      <header className="mx-auto max-w-2xl space-y-2">
-        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          боковым зрением · Евгений Кирилов
-        </p>
-        <h1 className="font-serif text-4xl font-medium tracking-tight text-balance">
-          Боковым зрением
-        </h1>
-        <p className="font-serif text-lg leading-[1.7] text-muted-foreground">
-          Чудо живёт не в космосе, а в обыденном — в офисе, фонаре, на скамейке.
-          Его видно боковым зрением.
-        </p>
-      </header>
+    <main id="main" tabIndex={-1}>
+      {/* Первый экран — «Тёплое окно»: окно горит с первого пикселя (§4/§8/§10).
+          Несёт единственный <h1> страницы; full-bleed, вне контентного контейнера. */}
+      <WarmWindowHero />
 
-      {/* Граф «Колеса» — десктоп-улучшение поверх индекса (на мобильном не рендерится).
-          «Карта смыслов проявляется из тумана» (FogReveal, §8). */}
-      <FogReveal className="mt-12 hidden lg:block">
-        <WheelGraph graph={graph} layout={layout} />
-      </FogReveal>
+      <div className="mx-auto max-w-2xl px-6 py-16 lg:max-w-5xl">
+        {/* «Колесо» — цель якоря «↓ блуждать по Колесу» из hero. */}
+        <div id="wheel" className="scroll-mt-8">
+          {/* Граф — десктоп-улучшение поверх индекса (на мобильном не рендерится).
+              «Карта смыслов проявляется из тумана» (FogReveal, §8). */}
+          <FogReveal className="hidden lg:block">
+            <WheelGraph graph={graph} layout={layout} />
+          </FogReveal>
 
-      {/* Канонический доступный двойник — всегда в DOM. */}
-      <div className="mx-auto mt-12 max-w-2xl">
-        <WheelIndex graph={graph} />
-      </div>
+          {/* Канонический доступный двойник — всегда в DOM. */}
+          <div className="mx-auto mt-12 max-w-2xl">
+            <WheelIndex graph={graph} />
+          </div>
+        </div>
 
       {/* Скролл-сцены хаба: тизеры-«лучи» к разделам. Проявляются при входе в кадр. */}
 
@@ -165,6 +160,7 @@ export default function VitrinaHome() {
           </Link>
         </footer>
       </Reveal>
+      </div>
     </main>
   );
 }
