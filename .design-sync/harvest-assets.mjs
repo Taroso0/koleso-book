@@ -6,13 +6,53 @@
 //  1. Конкатенирует продакшн-CSS из .next/static/chunks/*.css (токены + утилиты + @font-face).
 //  2. Промоутит --font-prose/--font-system/--font-mono-accent с хэш-классов next/font (.___variable)
 //     на :root — иначе var(--font-system) в утилитах/базе не резолвится вне <html> приложения.
-//  3. Переписывает url(../media/…) → url(./fonts/…) под раскладку бандла.
-//  4. Копирует .next/static/media/*.woff2 → .design-sync/assets/fonts/.
+//  3. Чистит CSS от служебного шума, который валидатор claude.ai/design (check_design_system)
+//     ложно считает «токенами» (фикс — см. NOTES.md «Чистка CSS под токен-экстрактор»):
+//       а) блок `@layer properties { … }` — legacy-фолбэк Tailwind v4: он инициализирует
+//          `--tw-*` (translate/rotate/blur/enter-exit…) на универсальном селекторе ВНУТРИ
+//          `@supports`, который таргетит только браузеры БЕЗ `@property`. Chromium и рантайм
+//          claude.ai/design поддерживают `@property` (все `@property --tw-*` остаются в CSS и
+//          несут initial-value), поэтому фолбэк там и так игнорируется — удаление пиксель-нейтрально,
+//          но снимает ~27 «неклассифицируемых токенов» (служебные `--tw-*` — не тема-токены).
+//       б) правила next/font вида `.<hash>__variable { --font-*: … }` — дубликаты: канонические
+//          `--font-prose/system/mono-accent` уже промоутятся на :root шагом 2. Снимает ~24
+//          «токена под компонентными селекторами».
+//     Авторские/семантические токены на :root (--sodium/--накал/--paper/--concrete/--font-*,
+//     shadcn-семантика, @theme) НЕ трогаются и остаются видимы/классифицируемы.
+//  4. Переписывает url(../media/…) → url(./fonts/…) под раскладку бандла.
+//  5. Копирует .next/static/media/*.woff2 → .design-sync/assets/fonts/.
 //
 // Выход (.design-sync/assets/) гитигнорится и регенерируется; для re-sync:
 //   npm run build && node .design-sync/harvest-assets.mjs  (перед прогоном конвертера).
 import fs from "node:fs";
 import path from "node:path";
+
+// Удаляет at-rule вместе со сбалансированным `{ … }`-телом (учитывает вложенность,
+// например `@layer properties { @supports(…) { *,::before{…} } }`). marker — RegExp
+// на заголовок правила (без `{`). Возвращает [очищенный css, число удалённых блоков].
+function stripBalancedAtRule(css, marker) {
+  let removed = 0;
+  for (;;) {
+    const m = css.match(marker);
+    if (!m) break;
+    const open = css.indexOf("{", m.index);
+    if (open === -1) break;
+    let depth = 0;
+    let end = open;
+    for (let i = open; i < css.length; i++) {
+      const ch = css[i];
+      if (ch === "{") depth++;
+      else if (ch === "}" && --depth === 0) {
+        end = i + 1;
+        break;
+      }
+    }
+    if (depth !== 0) break; // несбалансировано — не трогаем
+    css = css.slice(0, m.index) + css.slice(end);
+    removed++;
+  }
+  return [css, removed];
+}
 
 const repo = process.cwd();
 const chunksDir = path.join(repo, ".next/static/chunks");
@@ -42,10 +82,21 @@ for (const name of wanted) {
   if (m) promoted.push(`${name}:${m[1].trim()}`);
 }
 
-// 3. url(../media/…) → url(./fonts/…)
+// 3. Чистка служебного шума (после промоута — он читает значения из .__variable-классов).
+//    3а. Весь блок @layer properties{…} (фолбэк Tailwind v4 для --tw-*; @property остаются).
+let removedLayers = 0;
+[css, removedLayers] = stripBalancedAtRule(css, /@layer\s+properties\b/);
+//    3б. Хэш-классы next/font (.<name>__variable{…}) — дубликаты --font-* (уже на :root).
+let removedFontClasses = 0;
+css = css.replace(/\.[A-Za-z0-9_-]*__variable\s*\{[^{}]*\}/g, () => {
+  removedFontClasses++;
+  return "";
+});
+
+// 4. url(../media/…) → url(./fonts/…)
 css = css.replace(/url\((['"]?)\.\.\/media\//g, "url($1./fonts/");
 
-// 4. Допишем промоут-блок в конец (перебивает определения на хэш-классах).
+// 5. Допишем промоут-блок в конец (перебивает определения на хэш-классах).
 if (promoted.length) css += `\n:root{${promoted.join(";")}}\n`;
 
 fs.writeFileSync(path.join(outDir, "styles.css"), css);
@@ -62,5 +113,6 @@ for (const f of fs.readdirSync(mediaDir)) {
 console.log(
   `harvest: styles.css ${css.length} б из [${cssFiles.join(", ")}]; ` +
     `promoted ${promoted.length} font-var (${promoted.map((p) => p.split(":")[0]).join(", ")}); ` +
+    `stripped ${removedLayers} @layer properties + ${removedFontClasses} next/font class; ` +
     `woff2 ${n}`
 );

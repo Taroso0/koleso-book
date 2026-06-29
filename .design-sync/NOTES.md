@@ -67,6 +67,33 @@ esbuild JSX-режим берётся из АВТОПОДХВАТА корнев
   суперсет: вкл. reading-темы и lenis; намеренно, несёт полный набор токенов light/dark).
 - `.design-sync/assets/` гитигнорится и регенерируется (не коммитим woff2/CSS).
 
+## Чистка CSS под токен-экстрактор claude.ai/design (важно)
+
+Валидатор проекта (`check_design_system`) извлекает «токены» из **деклараций кастом-свойств
+под селекторами** (`:root`, универсальный `*`, классы) шипнутого `_ds_bundle.css`. Сырой
+скомпилированный CSS Tailwind v4 + next/font содержит два служебных источника, которые он
+ложно считает токенами. `harvest-assets.mjs` (шаг 3) их вырезает:
+
+1. **`@layer properties { … }`** — legacy-фолбэк Tailwind v4: инициализирует все `--tw-*`
+   (translate/rotate/blur/shadow/ring/enter-exit…) на `*,::before,::after,::backdrop` **внутри
+   `@supports`**, который таргетит браузеры БЕЗ `@property`. Давал ~27 «неклассифицируемых
+   токенов». Удаляется целиком брейс-матчером `stripBalancedAtRule`. **Безопасно:** в CSS
+   остаются все ~72 `@property --tw-*{…initial-value}` (модерн-путь) — Chromium и рантайм
+   claude.ai/design поддерживают `@property`, поэтому фолбэк там и так игнорировался; удаление
+   пиксель-нейтрально, трансформы/фильтры/анимации работают.
+2. **next/font `.<hash>__variable{ --font-*: … }`** (3 класса) — давали ~24 «токена под
+   компонентными селекторами». Дубликаты: канонические `--font-prose/system/mono-accent` уже
+   промоутятся на `:root` шагом 2. Удаляются регэкспом (после извлечения значений шагом 2!).
+
+Авторские/семантические токены на `:root` (`--sodium` и пр., shadcn-семантика, `@theme`)
+НЕ трогаются и остаются видимы/классифицируемы. NB: `--накал` НЕ существует — бренд-акцент это
+**`--sodium`** (натриевый оранжевый, ~12 ссылок в CSS).
+
+`_adherence.oxlintrc.json` (карта `tokenKinds` и пр.) **регенерируется сервером** из шипнутого
+CSS — он НЕ в нашем бандле, править его руками нельзя. Убрали `--tw-*` из деклараций под
+селекторами → сервер их больше не извлекает и не классифицирует (ни как color, ни как «прочее»).
+Поэтому правка `tokenKinds` достигается чисткой CSS, а не редактированием oxlintrc.
+
 ## Контракт API (`dtsPropsFor` — все 8 вручную)
 
 - В synth-режиме (без dist `.d.ts`) ts-morph НЕ резолвит inline-типы с импортами (`VariantProps`,
@@ -141,6 +168,13 @@ upload (sentinel → full writes → deletes дословно из `upload.delet
 
 ## Known render warns
 
-- `tokens: … (1 missing, below threshold)` — НЕ блокирует (`validate` exit 0). Один `var(--token)`
-  без определения в шипнутом CSS, ниже порога. Если порог превысит — глянуть `[TOKENS_MISSING]`.
+- `[TOKENS_MISSING] 6 … (below threshold)` — НЕ блокирует (`validate` exit 0). Это
+  `--tw-border-style/-inset-shadow/-inset-ring-shadow/-ring-offset-shadow/-ring-offset-width` +
+  служебный сентинел `var(--tw)`. После удаления `@layer properties` (см. «Чистка CSS») они
+  определены ТОЛЬКО через `@property …{initial-value}`, который грубый текст-скан локального
+  валидатора не парсит → считает «missing». В реальном браузере (рендер-чек, рантайм
+  claude.ai/design) они определены и резолвятся. `var(--tw)` — намеренный undefined-сентинел
+  Tailwind внутри `@supports (…backdrop-filter:var(--tw))` (был и до чистки — прежний «1 missing»);
+  серверный `check_design_system` его НЕ флагал → undefined-ссылки он не проверяет, значит и эти 6
+  не даст. Если порог превысит — глянуть `[TOKENS_MISSING]`.
 - render-check 8/8 чисто; `bad/thin/variantsIdentical = 0`.
