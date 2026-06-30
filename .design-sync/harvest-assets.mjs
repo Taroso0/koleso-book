@@ -17,8 +17,13 @@
 //       б) правила next/font вида `.<hash>__variable { --font-*: … }` — дубликаты: канонические
 //          `--font-prose/system/mono-accent` уже промоутятся на :root шагом 2. Снимает ~24
 //          «токена под компонентными селекторами».
-//     Авторские/семантические токены на :root (--sodium/--накал/--paper/--concrete/--font-*,
-//     shadcn-семантика, @theme) НЕ трогаются и остаются видимы/классифицируемы.
+//       в) помечает функциональные служебные переменные Tailwind/tw-animate (--tw-* и
+//          --default-*) комментарием `/* @kind other */` — они нужны утилитам (трансформы/
+//          фильтры/spacing/leading/переходы), поэтому НЕ удаляются, но это движок, а не
+//          тема-токены: по пометке валидатор исключает их из набора токенов (снимает
+//          «переменные под утил-селекторами» и «неклассифицируемые --tw-/--default-»).
+//     Авторские/семантические токены на :root (--sodium/--paper/--concrete/--monitor/--font-*,
+//     shadcn-семантика, --color-*/--spacing/--radius из @theme) НЕ трогаются и классифицируются.
 //  4. Переписывает url(../media/…) → url(./fonts/…) под раскладку бандла.
 //  5. Копирует .next/static/media/*.woff2 → .design-sync/assets/fonts/.
 //
@@ -92,6 +97,19 @@ css = css.replace(/\.[A-Za-z0-9_-]*__variable\s*\{[^{}]*\}/g, () => {
   removedFontClasses++;
   return "";
 });
+//    3в. Помечаем служебные переменные Tailwind/tw-animate (--tw-* и --default-*)
+//        комментарием `/* @kind other */`. Они функциональны (трансформы/фильтры/
+//        spacing/leading/переходы — напр. .blur/.sepia/.-translate-x-1/2/.space-y-*/
+//        .leading-prose), поэтому НЕ удаляем (иначе утилиты сломаются, fallback на
+//        @property initial-value). Но это движок Tailwind, а не тема-токены: валидатор
+//        claude.ai/design по этой пометке исключает их из набора токенов — снимает
+//        и «переменные под утил-селекторами», и «неклассифицируемые». Канонические
+//        токены (--sodium/--color-*/--spacing/--font-*/--radius) — другой префикс, не трогаются.
+let kindTagged = 0;
+css = css.replace(/(--(?:tw|default)-[A-Za-z0-9-]+\s*:\s*[^;{}]+)(?=[;}])/g, (_m, decl) => {
+  kindTagged++;
+  return decl + "/* @kind other */";
+});
 
 // 4. url(../media/…) → url(./fonts/…)
 css = css.replace(/url\((['"]?)\.\.\/media\//g, "url($1./fonts/");
@@ -114,5 +132,6 @@ console.log(
   `harvest: styles.css ${css.length} б из [${cssFiles.join(", ")}]; ` +
     `promoted ${promoted.length} font-var (${promoted.map((p) => p.split(":")[0]).join(", ")}); ` +
     `stripped ${removedLayers} @layer properties + ${removedFontClasses} next/font class; ` +
+    `kind-tagged ${kindTagged} --tw-/--default- var; ` +
     `woff2 ${n}`
 );
