@@ -17,11 +17,15 @@
 //       б) правила next/font вида `.<hash>__variable { --font-*: … }` — дубликаты: канонические
 //          `--font-prose/system/mono-accent` уже промоутятся на :root шагом 2. Снимает ~24
 //          «токена под компонентными селекторами».
-//       в) помечает функциональные служебные переменные Tailwind/tw-animate (--tw-* и
-//          --default-*) комментарием `/* @kind other */` — они нужны утилитам (трансформы/
-//          фильтры/spacing/leading/переходы), поэтому НЕ удаляются, но это движок, а не
-//          тема-токены: по пометке валидатор исключает их из набора токенов (снимает
-//          «переменные под утил-селекторами» и «неклассифицируемые --tw-/--default-»).
+//       в) удаляет объявления кастом-свойств из тел правил `:where(.<utility>…)` (Tailwind
+//          `space-y-*` → `--tw-space-y-reverse:0`). Значение == `@property` initial (0) →
+//          пиксель-нейтрально (var берёт initial, margin-* остаются). `:where()`-скоуп
+//          permissive-скрейпер не принимает за валидный токен-скоуп → флагал их; здесь убираем.
+//       г) помечает функциональные служебные переменные Tailwind/tw-animate (--tw-* и
+//          --default-*) под ОДИНОЧНЫМИ классами комментарием `/* @kind other */` — они нужны
+//          утилитам (трансформы/фильтры/leading/tracking/переходы) и компонентам, поэтому НЕ
+//          удаляются, но это движок, а не тема-токены: по пометке валидатор исключает их из
+//          набора токенов (одиночный класс-скоуп скрейпер принимает → пометки достаточно).
 //     Авторские/семантические токены на :root (--sodium/--paper/--concrete/--monitor/--font-*,
 //     shadcn-семантика, --color-*/--spacing/--radius из @theme) НЕ трогаются и классифицируются.
 //  4. Переписывает url(../media/…) → url(./fonts/…) под раскладку бандла.
@@ -97,7 +101,20 @@ css = css.replace(/\.[A-Za-z0-9_-]*__variable\s*\{[^{}]*\}/g, () => {
   removedFontClasses++;
   return "";
 });
-//    3в. Помечаем служебные переменные Tailwind/tw-animate (--tw-* и --default-*)
+//    3в. Удаляем объявления кастом-свойств из тел правил :where(...) — это Tailwind-утилиты
+//        (space-y → --tw-space-y-reverse:0), а НЕ тема-токены, и permissive-скрейпер сервера
+//        флагает их как «переменные под утил-селекторами». Значение совпадает с `@property`
+//        initial (0), поэтому удаление **пиксель-нейтрально**: var() берёт initial, а
+//        функциональные margin-block-* в правиле остаются — space-y-* считает те же отступы.
+//        (Сейчас в :where()-телах только нейтральные reverse-флаги; см. NOTES.)
+let strippedWhereDecls = 0;
+css = css.replace(/:where\([^{]*\)\s*\{[^{}]*\}/g, (rule) =>
+  rule.replace(/--[A-Za-z][\w-]*\s*:\s*[^;{}]+;?/g, () => {
+    strippedWhereDecls++;
+    return "";
+  })
+);
+//    3г. Помечаем служебные переменные Tailwind/tw-animate (--tw-* и --default-*)
 //        комментарием `/* @kind other */`. Они функциональны (трансформы/фильтры/
 //        spacing/leading/переходы — напр. .blur/.sepia/.-translate-x-1/2/.space-y-*/
 //        .leading-prose), поэтому НЕ удаляем (иначе утилиты сломаются, fallback на
@@ -131,7 +148,8 @@ for (const f of fs.readdirSync(mediaDir)) {
 console.log(
   `harvest: styles.css ${css.length} б из [${cssFiles.join(", ")}]; ` +
     `promoted ${promoted.length} font-var (${promoted.map((p) => p.split(":")[0]).join(", ")}); ` +
-    `stripped ${removedLayers} @layer properties + ${removedFontClasses} next/font class; ` +
+    `stripped ${removedLayers} @layer properties + ${removedFontClasses} next/font class + ` +
+    `${strippedWhereDecls} :where() decl; ` +
     `kind-tagged ${kindTagged} --tw-/--default- var; ` +
     `woff2 ${n}`
 );
