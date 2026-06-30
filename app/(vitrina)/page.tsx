@@ -65,15 +65,18 @@ export default function VitrinaHome() {
             Автор
           </h2>
           <AccentLine className="mt-3" />
-          <p className="mt-4 font-serif text-lg leading-[1.7] text-muted-foreground">
-            Евгений Кирилов пишет «офисную готику» — чудо, спрятанное в сером
-            корпоративном быту: в опенспейсе, в фонаре в три часа ночи, в
-            системном уведомлении. Тёпло, иронично, по-человечески — а не
-            торжественно.
-          </p>
-          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            Скоро
-          </p>
+          {/* тело — манильский «документ» (§4) */}
+          <div className="paper-surface mt-5 rounded-md p-6 sm:p-8">
+            <p className="font-serif text-lg leading-[1.7] text-muted-foreground">
+              Евгений Кирилов пишет «офисную готику» — чудо, спрятанное в сером
+              корпоративном быту: в опенспейсе, в фонаре в три часа ночи, в
+              системном уведомлении. Тёпло, иронично, по-человечески — а не
+              торжественно.
+            </p>
+            <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              Скоро
+            </p>
+          </div>
         </Reveal>
       </section>
 
@@ -100,7 +103,7 @@ export default function VitrinaHome() {
             <Link
               key={book.id}
               href={`/read/${book.id}`}
-              className="group rounded-sm border border-border p-5 transition-colors hover:border-foreground/40"
+              className="paper-surface group rounded-md p-5 transition-transform hover:-translate-y-0.5"
             >
               <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
                 {book.year}
@@ -133,16 +136,19 @@ export default function VitrinaHome() {
             Мастерская
           </h2>
           <AccentLine className="mt-3" />
-          <p className="mt-4 font-serif text-lg leading-[1.7] text-muted-foreground">
-            Третья книга растёт на глазах: фрагменты, черновики, заметки и новые
-            иллюстрации. Building-in-public для художественной прозы.
-          </p>
-          <Link
-            href="/workshop"
-            className="mt-4 inline-block font-sans text-sm underline-offset-4 hover:underline"
-          >
-            Зайти в Мастерскую →
-          </Link>
+          {/* тело — манильский «документ» (§4) */}
+          <div className="paper-surface mt-5 rounded-md p-6 sm:p-8">
+            <p className="font-serif text-lg leading-[1.7] text-muted-foreground">
+              Третья книга растёт на глазах: фрагменты, черновики, заметки и
+              новые иллюстрации. Building-in-public для художественной прозы.
+            </p>
+            <Link
+              href="/workshop"
+              className="mt-4 inline-block font-sans text-sm underline-offset-4 hover:underline"
+            >
+              Зайти в Мастерскую →
+            </Link>
+          </div>
         </Reveal>
       </section>
 

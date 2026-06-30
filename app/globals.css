@@ -585,3 +585,64 @@ html[data-reading-mode="paged"] [data-reading-content] {
     height: 60vh;
   }
 }
+
+/* ════════ Фактура поверхностей «Витрины» (§4) — «снять бумагу A4» ════════
+   Материя вместо #fff: бетон под Витриной + манильская бумага у документов/книг.
+   Только «Витрина» — .reading-root (Читальня) остаётся чистой (читаемость §6/§11).
+   Тёмные сцены (hero/контакты) — opaque, бетон под ними не виден. Контраст текста —
+   WCAG AA (поверхность светлая ~0.90–0.985, фактура мягкая: soft-light/overlay). */
+
+/* ░ Бетон — поверхность-громада под светлым контентом «Витрины» ░ */
+.vitrina-surface {
+  position: relative;
+  min-height: 100dvh;
+  background: radial-gradient(115% 95% at 10% 14%, oklch(0.985 0.004 160), transparent 52%),
+    radial-gradient(120% 90% at 92% 96%, oklch(0.9 0.006 250 / 0.5), transparent 58%),
+    var(--background);
+}
+.vitrina-surface::before {
+  /* tooth — крупная неровность + мелкое зерно (монохром, soft-light) */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.024 0.03' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  background-size: 680px 680px;
+  mix-blend-mode: soft-light;
+  opacity: 0.5;
+}
+/* контент — над фактурой (иначе positioned ::before перекрыл бы поток) */
+.vitrina-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ░ Бумага — манильский документ: карточки книг, тело тизер-секций ░ */
+.paper-surface {
+  position: relative;
+  background: linear-gradient(
+    158deg,
+    oklch(0.955 0.028 90),
+    var(--paper) 58%,
+    oklch(0.885 0.036 84)
+  );
+  box-shadow: 0 1px 0 oklch(1 0 0 / 0.5) inset, 0 0 0 1px oklch(0.78 0.04 82 / 0.5),
+    14px 30px 60px -28px oklch(0.2 0.02 252 / 0.55);
+}
+.paper-surface::before {
+  /* волокно бумаги (монохром, soft-light) */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  mix-blend-mode: soft-light;
+  opacity: 0.55;
+}
+.paper-surface > * {
+  position: relative;
+  z-index: 1;
+}

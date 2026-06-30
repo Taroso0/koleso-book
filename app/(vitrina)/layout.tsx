@@ -10,7 +10,12 @@ import { CustomCursor } from "@/components/haunted/CustomCursor";
 export default function VitrinaLayout({ children }: { children: React.ReactNode }) {
   return (
     <SmoothScroll>
-      <ZachinProvider>{children}</ZachinProvider>
+      {/* .vitrina-surface — бетон под страницей (§4 «материя вместо A4»). Оборачивает
+          ТОЛЬКО {children}, а не оверлей зачина: его `> *{position:relative}` иначе
+          сломал бы fixed-оверлей события. Зерно/курсор — сиблинги, лежат поверх. */}
+      <ZachinProvider>
+        <div className="vitrina-surface">{children}</div>
+      </ZachinProvider>
       <GrainOverlay />
       <CustomCursor />
     </SmoothScroll>
