@@ -21,7 +21,15 @@
 //          `space-y-*` → `--tw-space-y-reverse:0`). Значение == `@property` initial (0) →
 //          пиксель-нейтрально (var берёт initial, margin-* остаются). `:where()`-скоуп
 //          permissive-скрейпер не принимает за валидный токен-скоуп → флагал их; здесь убираем.
-//       г) помечает функциональные служебные переменные Tailwind/tw-animate (--tw-* и
+//       г) реконструирует ВАРИАНТНЫЕ `--tw-*` правила (класс + приклеенный псевдо/атрибут:
+//          `hover:`/`focus-visible:`/`active:`/`aria-invalid:`/`dark:`), которые скрейпер
+//          флагает как «переменные под утил-селекторами» и которые `@kind` НЕ снимает
+//          (вариантный скоуп отклоняется, в отличие от одиночного класса). Убирает объявления,
+//          СОХРАНЯЯ рендер: translate → инлайн литералом в `translate:`; ring → удаляет
+//          `--tw-ring-color`/`--tw-ring-shadow` и реконструирует каскад shadcn прямыми
+//          `box-shadow` (компаунд-селекторы width+color с вшитым цветом). 0 объявлений
+//          кастом-свойств под вариантными селекторами (только ссылки `var(--tw-*)`).
+//       д) помечает функциональные служебные переменные Tailwind/tw-animate (--tw-* и
 //          --default-*) под ОДИНОЧНЫМИ классами комментарием `/* @kind other */` — они нужны
 //          утилитам (трансформы/фильтры/leading/tracking/переходы) и компонентам, поэтому НЕ
 //          удаляются, но это движок, а не тема-токены: по пометке валидатор исключает их из
@@ -114,7 +122,96 @@ css = css.replace(/:where\([^{]*\)\s*\{[^{}]*\}/g, (rule) =>
     return "";
   })
 );
-//    3г. Помечаем служебные переменные Tailwind/tw-animate (--tw-* и --default-*)
+//    3г. Реконструкция ВАРИАНТНЫХ --tw-* правил (класс + приклеенный псевдо/атрибут:
+//        hover:/focus-visible:/active:/aria-invalid:/dark:). Скрейпер claude.ai/design флагает
+//        объявления кастом-свойств под такими селекторами, а `@kind other` их НЕ снимает
+//        (вариантный скоуп отклоняется — в отличие от одиночного класса). Убираем объявления,
+//        СОХРАНЯЯ рендер:
+//          • translate (hover-lift, active-nudge): --tw-translate-y инлайним литералом в
+//            `translate:` (--tw-translate-x остаётся ссылкой = initial 0 / set-значение).
+//          • ring (focus/invalid): реконструируем каскад shadcn прямыми `box-shadow`. Геометрия
+//            = 3px (ring-3), видима только на focus-visible/[aria-invalid]. 2 width-правила
+//            инлайним (кольцо currentcolor-fallback), 5 color-правил (--tw-ring-color) удаляем,
+//            добавляем 5 компаунд-правил width+color с вшитым цветом (порядок = каскад:
+//            base<ring/50<destructive/20<dark/40; invalid позже focus). Все правила лишь
+//            ССЫЛАЮТСЯ на --tw-* → 0 объявлений под вариантами. NB: завязано на конкретные
+//            shadcn-селекторы; иная ширина/цвет деградирует до видимого currentcolor-кольца
+//            (не исчезает). Делаем ДО @kind (3д).
+let variantRewrites = 0;
+let ringColorDropped = 0;
+{
+  const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const ruleBody = (sel) => {
+    const m = css.match(new RegExp(escRe(sel) + "\\{([^{}]*)\\}"));
+    return m ? m[1] : null;
+  };
+  const setRuleBody = (sel, body) => {
+    let hit = false;
+    css = css.replace(new RegExp(escRe(sel) + "\\{[^{}]*\\}"), () => {
+      hit = true;
+      return sel + "{" + body + "}";
+    });
+    return hit;
+  };
+  const dropRule = (sel) => {
+    let n = 0;
+    css = css.replace(new RegExp(escRe(sel) + "\\{[^{}]*\\}", "g"), () => {
+      n++;
+      return "";
+    });
+    return n;
+  };
+
+  // A. translate — вписать значение --tw-translate-y прямо в translate:
+  for (const sel of [
+    ".hover\\:-translate-y-0\\.5:hover",
+    ".active\\:not-aria-\\[haspopup\\]\\:translate-y-px:active:not([aria-haspopup])",
+  ]) {
+    const b = ruleBody(sel);
+    const mv = b && b.match(/--tw-translate-y:\s*([^;}]+)/);
+    if (mv && setRuleBody(sel, `translate:var(--tw-translate-x) ${mv[1].trim()}`)) variantRewrites++;
+  }
+
+  // B. ring — шаблон слоёв тени + каскад цветов shadcn
+  const layers = (c) =>
+    "box-shadow:var(--tw-inset-shadow), var(--tw-inset-ring-shadow), " +
+    "var(--tw-ring-offset-shadow), var(--tw-ring-inset,) 0 0 0 " +
+    `calc(3px + var(--tw-ring-offset-width)) ${c}, var(--tw-shadow)`;
+  const RING50 = "color-mix(in oklab, var(--ring) 50%, transparent)";
+  const DEST20 = "color-mix(in oklab, var(--destructive) 20%, transparent)";
+  const DEST40 = "color-mix(in oklab, var(--destructive) 40%, transparent)";
+
+  // B1. инлайн width-правил (снять --tw-ring-shadow; базовое кольцо = currentcolor-fallback)
+  for (const sel of [
+    ".focus-visible\\:ring-3:focus-visible",
+    ".aria-invalid\\:ring-3[aria-invalid=true]",
+  ]) {
+    if (setRuleBody(sel, layers("var(--tw-ring-color,currentcolor)"))) variantRewrites++;
+  }
+  // B2. удалить color-правила (--tw-ring-color; каждый селектор — фолбэк + color-mix)
+  for (const sel of [
+    ".focus-visible\\:ring-destructive\\/20:focus-visible",
+    ".focus-visible\\:ring-ring\\/50:focus-visible",
+    ".aria-invalid\\:ring-destructive\\/20[aria-invalid=true]",
+    ".dark\\:focus-visible\\:ring-destructive\\/40:is(.dark *):focus-visible",
+    ".dark\\:aria-invalid\\:ring-destructive\\/40:is(.dark *)[aria-invalid=true]",
+  ]) {
+    ringColorDropped += dropRule(sel);
+  }
+  // B3. добавить компаунд-правила width+color (порядок = каскад shadcn)
+  if (ringColorDropped) {
+    const compounds = [
+      [".focus-visible\\:ring-3.focus-visible\\:ring-ring\\/50:focus-visible", RING50],
+      [".focus-visible\\:ring-3.focus-visible\\:ring-destructive\\/20:focus-visible", DEST20],
+      [".focus-visible\\:ring-3.dark\\:focus-visible\\:ring-destructive\\/40:is(.dark *):focus-visible", DEST40],
+      [".aria-invalid\\:ring-3.aria-invalid\\:ring-destructive\\/20[aria-invalid=true]", DEST20],
+      [".aria-invalid\\:ring-3.dark\\:aria-invalid\\:ring-destructive\\/40:is(.dark *)[aria-invalid=true]", DEST40],
+    ];
+    css += "\n" + compounds.map(([s, c]) => `${s}{${layers(c)}}`).join("\n") + "\n";
+    variantRewrites += compounds.length;
+  }
+}
+//    3д. Помечаем служебные переменные Tailwind/tw-animate (--tw-* и --default-*)
 //        комментарием `/* @kind other */`. Они функциональны (трансформы/фильтры/
 //        spacing/leading/переходы — напр. .blur/.sepia/.-translate-x-1/2/.space-y-*/
 //        .leading-prose), поэтому НЕ удаляем (иначе утилиты сломаются, fallback на
@@ -150,6 +247,7 @@ console.log(
     `promoted ${promoted.length} font-var (${promoted.map((p) => p.split(":")[0]).join(", ")}); ` +
     `stripped ${removedLayers} @layer properties + ${removedFontClasses} next/font class + ` +
     `${strippedWhereDecls} :where() decl; ` +
+    `variant-rewrote ${variantRewrites} rule (drop ${ringColorDropped} ring-color decl); ` +
     `kind-tagged ${kindTagged} --tw-/--default- var; ` +
     `woff2 ${n}`
 );
