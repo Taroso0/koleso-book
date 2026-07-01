@@ -646,3 +646,27 @@ html[data-reading-mode="paged"] [data-reading-content] {
   position: relative;
   z-index: 1;
 }
+
+/* ════════ Дыхание узла «Колеса» (§10) — «движется только сверхъестественное» ════════
+   Отдельно от .warm-hero .breathe (там scale 1.32 — для hero, крупно). Здесь мягче
+   (1.06) и со свечением через drop-shadow на ОДНОМ узле (перф вместо SVG-фильтра на всё
+   дерево). Двойной шлюз: класс вешает JS только при !reduced (WheelCanvas) И правило
+   живёт под no-preference. Под reduced понятие остаётся натриевым, но статичным — паритет. */
+@keyframes wheel-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px var(--sodium));
+  }
+  50% {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 9px var(--sodium));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wheel-breathe {
+    transform-box: fill-box; /* иначе scale считается от угла вьюпорта */
+    transform-origin: center; /* и узел «улетит» из кольца */
+    animation: wheel-breathe 3.6s ease-in-out infinite;
+  }
+}

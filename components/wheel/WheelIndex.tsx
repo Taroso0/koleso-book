@@ -13,7 +13,7 @@ export function WheelIndex({ graph }: { graph: WheelGraph }) {
       <div className="space-y-3">
         <h2
           id="wheel-heading"
-          className="font-sans text-2xl font-medium tracking-tight"
+          className="font-serif text-2xl font-medium tracking-tight"
         >
           Колесо
         </h2>
@@ -49,7 +49,7 @@ export function WheelIndex({ graph }: { graph: WheelGraph }) {
           <section key={theme.id} aria-labelledby={`theme-${theme.id}`}>
             <h3
               id={`theme-${theme.id}`}
-              className="scroll-mt-6 border-b border-border pb-2 font-sans text-lg font-medium tracking-tight"
+              className="scroll-mt-6 border-b border-border pb-2 font-serif text-lg font-medium tracking-tight"
             >
               {theme.label}
               <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">

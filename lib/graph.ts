@@ -60,6 +60,16 @@ export function groupByTheme(graph: WheelGraph): ThemeWithStories[] {
     });
 }
 
+/** Степень узла-понятия = число рассказов на теме (§8 «вес понятиям»). Рёбра
+ *  направлены story→theme, поэтому степень темы = число рёбер с её target. Все темы
+ *  инициализируются нулём — тема без рассказов даёт 0 (достойная деградация). */
+export function themeDegree(graph: WheelGraph): Record<string, number> {
+  const deg: Record<string, number> = {};
+  for (const n of graph.nodes) if (n.kind === "theme") deg[n.id] = 0;
+  for (const l of graph.links) deg[l.target] = (deg[l.target] ?? 0) + 1;
+  return deg;
+}
+
 /** Усилить рёбра активного рассказа и его тем (§5 «↑weight соседних рёбер»).
  *  Чистая; потребитель — перестройка «Колеса» при чтении (Шаг 3.3). */
 export function reweight(

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import type { WheelGraph, WheelNode } from "@/lib/graph";
-import { reweight } from "@/lib/graph";
+import { reweight, themeDegree } from "@/lib/graph";
 import { WHEEL_VIEW, computeWheelLayout, type WheelLayout } from "@/lib/wheelLayout";
 import { useReducedMotionSafe } from "@/components/motion/useReducedMotionSafe";
 import { useZachin } from "@/components/haunted/zachinContext";
@@ -15,6 +15,11 @@ import { StoryNode } from "./StoryNode";
 // Задержка «подержать» перед подсветкой узла — чтобы случайные пролёты мыши над
 // кругами при небыстром движении не захватывали их.
 const HOVER_DWELL_MS = 200;
+
+// Радиус узла-темы ∝ степени (число рассказов): крупные звёзды и мелкие. Клэмп держит
+// «Человек» (макс.) в узде, а тему с 0 рёбер — видимой (r=6, достойная деградация).
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const radiusForDegree = (degree: number) => clamp(6 + degree * 0.7, 6, 20);
 
 // Визуальный граф «Колеса» (§5/§8). Базовые позиции — предрасчёт на сборке (проп
 // layout). При внимании к рассказу (наведение/клавиатурный фокус) колесо
@@ -57,11 +62,30 @@ export function WheelCanvas({
     return map;
   }, [graph]);
 
+  // Вес понятий из графа (build-time): степень = число рассказов на теме.
+  const degree = useMemo(() => themeDegree(graph), [graph]);
+  const radiusOf = (id: string) => radiusForDegree(degree[id] ?? 0);
+
+  // «Горит по умолчанию» — тема с макс. степенью (тай-брейк: канонический порядок).
+  // Вычисляется из данных → после вычитки themes[] картинка пересоберётся сама.
+  const defaultLitId = useMemo(() => {
+    const themeNodes = graph.nodes.filter((n) => n.kind === "theme");
+    return (
+      themeNodes
+        .map((n, i) => ({ id: n.id, deg: degree[n.id] ?? 0, i }))
+        .sort((a, b) => b.deg - a.deg || a.i - b.i)[0]?.id ?? null
+    );
+  }, [graph, degree]);
+
   const activeId = keyboardFocusId ?? hoveredId;
   const activeNode = activeId
     ? orderedNodes.find((n) => n.id === activeId) ?? null
     : null;
   const activeStorySlug = activeNode?.kind === "story" ? activeNode.id : null;
+
+  // Покой больше не пустой: без внимания горит defaultLit; внимание переносит огонь.
+  // litId ведёт натрий (кто горит); «сильный дим» остаётся на activeId (живое внимание).
+  const litId = activeId ?? defaultLitId;
 
   // Перестройка вокруг активного рассказа (клиентский reweight, тёплый старт).
   // Под reduced-motion — базовая укладка (без reflow).
@@ -82,13 +106,14 @@ export function WheelCanvas({
     [],
   );
 
+  // Состояние (натрий) — от litId (в покое = defaultLit), не от activeId.
   const nodeState = (id: string): NodeState => {
-    if (!activeId) return "idle";
-    if (id === activeId) return "active";
-    return neighbors.get(activeId)?.has(id) ? "highlight" : "dim";
+    if (!litId) return "idle";
+    if (id === litId) return "active";
+    return neighbors.get(litId)?.has(id) ? "highlight" : "dim";
   };
   const linkLit = (s: string, t: string) =>
-    !!activeId && (s === activeId || t === activeId);
+    !!litId && (s === litId || t === litId);
 
   // Превью рассказа (заголовок + firstLine) расцеплено с подсветкой: при наведении
   // на рассказ показываем его карточку. Если активна ТЕМА (закреплена кликом/
@@ -219,7 +244,7 @@ export function WheelCanvas({
                 transition={spring}
                 strokeWidth={lit ? 1.5 : 1}
                 className={cn(lit ? "stroke-sodium" : "stroke-foreground")}
-                opacity={activeId ? (lit ? 0.9 : 0.08) : 0.2}
+                opacity={lit ? 0.85 : 0.08}
               />
             );
           })}
@@ -246,7 +271,9 @@ export function WheelCanvas({
               }
               className={cn(
                 "cursor-pointer outline-none",
-                state === "dim" && "opacity-25",
+                // сильный дим — ТОЛЬКО при живом внимании (hover/фокус), не в покое:
+                // иначе всё неподсвеченное ушло бы в 25% и колесо стало бы призрачным
+                activeId && state === "dim" && "opacity-25",
                 // при выбранной теме приглушённые рассказы некликабельны вовсе
                 themeActive &&
                   node.kind === "story" &&
@@ -266,13 +293,20 @@ export function WheelCanvas({
                 // светлом фоне (натриевое давало ~2:1). Бренд-цвет несёт сам узел
                 // (активный узел заливается sodium).
                 <circle
-                  r={node.kind === "theme" ? 16 : 12}
+                  r={node.kind === "theme" ? radiusOf(node.id) + 6 : 12}
                   strokeWidth={2}
                   className="fill-none stroke-foreground"
                 />
               )}
               {node.kind === "theme" ? (
-                <ThemeNode node={node} state={state} side={themeSide(node.id)} />
+                <ThemeNode
+                  node={node}
+                  state={state}
+                  side={themeSide(node.id)}
+                  radius={radiusOf(node.id)}
+                  degree={degree[node.id] ?? 0}
+                  breathe={node.id === litId && !reduced}
+                />
               ) : (
                 <StoryNode state={state} />
               )}
