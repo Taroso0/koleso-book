@@ -229,6 +229,30 @@ html[data-reading-mode="paged"] [data-reading-content] {
   );
 }
 
+/* Мост в ночь: нижняя кромка hero по ВСЕЙ ширине приходит ровно в --night (= фон
+   .wheel-night) → шов неразличим. Радиальный фон hero к низу уходит в 0.135 (темнее
+   ночи), а виньетка добавляет 0.08 — поэтому подгонять стопы радиала бесполезно, нужен
+   верхний мост. z-index: 6 — НАД виньеткой (её тёмный низ иначе перекрасил бы мост и
+   вернул ступеньку; ::after — последний в DOM, бьёт тай при равном z), но ПОД .copy
+   (z:7) → заголовок и ссылки «↓ блуждать по Колесу» остаются сверху и кликабельны.
+   Декоративный, клики пропускает. */
+.warm-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(120px, 20vh, 220px);
+  z-index: 6;
+  background: linear-gradient(
+    180deg,
+    oklch(0.185 0.014 256 / 0) 0%,
+    oklch(0.185 0.014 256 / 0.55) 55%,
+    oklch(0.185 0.014 256) 96%
+  );
+  pointer-events: none;
+}
+
 /* холодная громада: стена с сеткой окон */
 .warm-hero .facade {
   position: absolute;
@@ -691,7 +715,8 @@ html[data-reading-mode="paged"] [data-reading-content] {
 .wheel-night {
   background: oklch(0.185 0.014 256); /* = --night героя, литерал (переменная scoped в .warm-hero) */
   padding: clamp(24px, 4vw, 56px) 0; /* горизонталь — у внутреннего контейнера; ночь full-bleed */
-  /* без border-radius и полей: ночь на всю ширину, вплотную к hero (шва нет) */
+  border-radius: 0; /* ночь — не карточка; гасит унаследованное скругление (светлые нотчи в углах) */
+  margin-top: -1px; /* 1px-перекрытие hero: субпиксельный transform Lenis не оставит белой нити */
 }
 .dawn-strip {
   height: 220px;
