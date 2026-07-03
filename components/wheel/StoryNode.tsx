@@ -10,7 +10,7 @@ export function StoryNode({ state }: { state: NodeState }) {
       {/* увеличенная прозрачная зона захвата мыши */}
       <circle r={12} className="fill-transparent" />
       <circle
-        r={lit ? 5 : 3}
+        r={lit ? 6 : 4}
         className={cn(
           "transition-all",
           lit ? "fill-sodium" : "fill-muted-foreground/55",

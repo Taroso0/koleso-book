@@ -390,10 +390,13 @@ html[data-reading-mode="paged"] [data-reading-content] {
 .warm-hero .st-link.lit {
   stroke: var(--sodium);
   opacity: 0.9;
-  stroke-width: 1.4;
+  stroke-width: 1.2;
 }
 .warm-hero .st-node {
   fill: oklch(0.72 0.012 250 / 0.5);
+}
+.warm-hero .st-node.lit {
+  fill: var(--sodium);
 }
 .warm-hero .th-ring {
   fill: var(--night);
@@ -403,15 +406,19 @@ html[data-reading-mode="paged"] [data-reading-content] {
 .warm-hero .th-ring.lit {
   fill: var(--sodium);
   stroke: var(--sodium);
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--sodium) 55%, transparent));
 }
+.warm-hero .th-halo {
+  fill: color-mix(in oklab, var(--sodium) 12%, transparent);
+}
+/* тизер: подпись горящей темы — антиквой (§5 «смысл»), в тон текста сцены */
 .warm-hero .th-label {
-  font-family: var(--font-mono-accent), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  fill: oklch(0.74 0.02 250 / 0.85);
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 10.5px;
+  fill: var(--ink);
 }
 .warm-hero .th-label.lit {
-  fill: oklch(0.95 0.012 95);
+  fill: var(--ink);
   font-weight: 600;
 }
 .warm-hero .breathe {
@@ -673,4 +680,27 @@ html[data-reading-mode="paged"] [data-reading-content] {
     transform-origin: center; /* и узел «улетит» из кольца */
     animation: wheel-breathe 3.6s ease-in-out infinite;
   }
+}
+
+/* ════════ Ночь созвездия → рассвет → бумага (§4 «свет как событие») ════════
+   Граф Шага 3 рисовался под тёмный фон (натрий, светлые подписи). Здесь desktop-граф
+   получает ночную панель (.dark в разметке флипает --foreground светлым), а ниже —
+   полоса-рассвет в светлый бетон. Обе — только десктоп (на мобильном графа/ночи нет),
+   статичны (под prefers-reduced-motion делать нечего). --night scoped в .warm-hero,
+   поэтому здесь литералом (совпадает с ним → шва сверху нет). */
+.wheel-night {
+  background: oklch(0.185 0.014 256); /* = --night героя */
+  padding: clamp(24px, 4vw, 56px) clamp(16px, 3vw, 40px);
+  border-radius: 0.5rem;
+}
+.dawn-strip {
+  height: 220px;
+  background: linear-gradient(
+    180deg,
+    oklch(0.185 0.014 256) 0%,
+    oklch(0.3 0.014 250) 34%,
+    oklch(0.55 0.01 230) 58%,
+    oklch(0.8 0.007 190) 80%,
+    oklch(0.968 0.006 160) 100% /* = :root --background (база бетона, шва снизу нет) */
+  );
 }

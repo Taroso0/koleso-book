@@ -9,7 +9,7 @@ import { WheelIndex } from "@/components/wheel/WheelIndex";
 import { WheelGraph } from "@/components/wheel/WheelGraph";
 import { getAllStories, getBooks } from "@/lib/content";
 import { themes } from "@/content/themes";
-import { buildGraph } from "@/lib/graph";
+import { buildGraph, themeDegree } from "@/lib/graph";
 import { computeWheelLayout } from "@/lib/wheelLayout";
 import { BOOK_IDS } from "@/content/schema";
 
@@ -24,6 +24,8 @@ export default function VitrinaHome() {
   );
   const graph = buildGraph(stories, themes);
   const layout = computeWheelLayout(graph);
+  // степени тем (build-time) — тизеру «Колеса» на hero (вес + лит = макс. степень)
+  const degrees = themeDegree(graph);
   const books = getBooks().sort(
     (a, b) => BOOK_IDS.indexOf(a.id) - BOOK_IDS.indexOf(b.id),
   );
@@ -32,18 +34,25 @@ export default function VitrinaHome() {
     <main id="main" tabIndex={-1}>
       {/* Первый экран — «Тёплое окно»: окно горит с первого пикселя (§4/§8/§10).
           Несёт единственный <h1> страницы; full-bleed, вне контентного контейнера. */}
-      <WarmWindowHero />
+      <WarmWindowHero degrees={degrees} />
 
       <div className="mx-auto max-w-2xl px-6 py-16 lg:max-w-5xl">
         {/* «Колесо» — цель якоря «↓ блуждать по Колесу» из hero. */}
         <div id="wheel" className="scroll-mt-8">
-          {/* Граф — десктоп-улучшение поверх индекса (на мобильном не рендерится).
-              «Карта смыслов проявляется из тумана» (FogReveal, §8). */}
-          <FogReveal className="hidden lg:block">
-            <WheelGraph graph={graph} layout={layout} />
-          </FogReveal>
+          {/* Ночная секция созвездия — только десктоп (граф — улучшение поверх двойника).
+              .dark → --foreground светлый: натрий и подписи узлов читаются «в ночи»
+              (§4/§8). «Карта смыслов проявляется из тумана» (FogReveal, §8). */}
+          <div className="wheel-night dark hidden lg:block">
+            <FogReveal>
+              <WheelGraph graph={graph} layout={layout} />
+            </FogReveal>
+          </div>
 
-          {/* Канонический доступный двойник — всегда в DOM. */}
+          {/* «Рассвет»: ночь созвездия растворяется в бумагу (§4 — свет как событие).
+              Только десктоп — на мобильном ночной секции нет, скрываем и рассвет. */}
+          <div className="dawn-strip hidden lg:block" aria-hidden />
+
+          {/* Канонический доступный двойник — всегда в DOM, на светлом. */}
           <div className="mx-auto mt-12 max-w-2xl">
             <WheelIndex graph={graph} />
           </div>

@@ -23,6 +23,9 @@ export function ThemeNode({
   const lit = state === "active" || state === "highlight";
   // подпись отодвигается наружу от кольца (радиус переменный)
   const dx = side === "start" ? radius + 8 : -(radius + 8);
+  // кегль подписи растёт со степенью — счётчик опускаем пропорционально ему, чтобы
+  // десцендеры («у», «Д») не легли на «· N» у крупных тем (§ фикс ①).
+  const labelSize = Math.min(19, 11.5 + degree * 0.45);
   return (
     <>
       {/* ореол присутствия — только когда горит (созвездие, не лаборатория) */}
@@ -46,14 +49,14 @@ export function ThemeNode({
           "font-serif",
           lit ? "fill-foreground font-semibold" : "fill-muted-foreground",
         )}
-        style={{ fontSize: Math.min(19, 11.5 + degree * 0.45) }}
+        style={{ fontSize: labelSize }}
       >
         {node.label}
       </text>
       {/* метаданные (счётчик рассказов) — моноширинным (§5 «система») */}
       <text
         x={dx}
-        y={14}
+        y={12 + labelSize * 0.5}
         textAnchor={side}
         className={cn(
           "font-mono text-[8.5px]",
