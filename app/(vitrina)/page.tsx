@@ -36,26 +36,37 @@ export default function VitrinaHome() {
           Несёт единственный <h1> страницы; full-bleed, вне контентного контейнера. */}
       <WarmWindowHero degrees={degrees} />
 
+      {/* Якорь «Колеса» — всегда в потоке (0-высоты, шва не рисует). Десктоп: стоит
+          перед full-bleed ночью → «↓ блуждать по Колесу» лендит на граф. Мобильный:
+          ночь/рассвет — display:none (0px), поэтому якорь лендит на двойник ниже.
+          Отдельный якорь (а не id на секции): нативный скролл к display:none-секции
+          не сработал бы, а кнопка должна работать по-прежнему на обоих экранах. */}
+      <div id="wheel" className="scroll-mt-8" />
+
+      {/* Ночь созвездия — full-bleed, прилегает к hero ВПЛОТНУЮ (тот же --night → шва
+          нет). .dark → --foreground светлый: натрий и подписи узлов читаются «в ночи»
+          (§4/§8). «Карта проявляется из тумана» (FogReveal). Только десктоп — граф —
+          улучшение поверх доступного двойника. */}
+      <section
+        aria-label="Колесо тем"
+        className="wheel-night dark hidden lg:block"
+      >
+        <div className="mx-auto max-w-5xl px-6">
+          <FogReveal>
+            <WheelGraph graph={graph} layout={layout} />
+          </FogReveal>
+        </div>
+      </section>
+
+      {/* «Рассвет»: ночь растворяется в бумагу (§4 — свет как событие). Full-bleed,
+          вплотную к ночи; только десктоп (на мобильном ночи нет). */}
+      <div className="dawn-strip hidden lg:block" aria-hidden />
+
       <div className="mx-auto max-w-2xl px-6 py-16 lg:max-w-5xl">
-        {/* «Колесо» — цель якоря «↓ блуждать по Колесу» из hero. */}
-        <div id="wheel" className="scroll-mt-8">
-          {/* Ночная секция созвездия — только десктоп (граф — улучшение поверх двойника).
-              .dark → --foreground светлый: натрий и подписи узлов читаются «в ночи»
-              (§4/§8). «Карта смыслов проявляется из тумана» (FogReveal, §8). */}
-          <div className="wheel-night dark hidden lg:block">
-            <FogReveal>
-              <WheelGraph graph={graph} layout={layout} />
-            </FogReveal>
-          </div>
-
-          {/* «Рассвет»: ночь созвездия растворяется в бумагу (§4 — свет как событие).
-              Только десктоп — на мобильном ночной секции нет, скрываем и рассвет. */}
-          <div className="dawn-strip hidden lg:block" aria-hidden />
-
-          {/* Канонический доступный двойник — всегда в DOM, на светлом. */}
-          <div className="mx-auto mt-12 max-w-2xl">
-            <WheelIndex graph={graph} />
-          </div>
+        {/* Канонический доступный двойник — на светлом, в .dark НЕ заворачивать.
+            Верхний отступ даёт py-16 контейнера (не mt-12) — без двойного зазора. */}
+        <div className="mx-auto max-w-2xl">
+          <WheelIndex graph={graph} />
         </div>
 
       {/* Скролл-сцены хаба: тизеры-«лучи» к разделам. Проявляются при входе в кадр. */}
