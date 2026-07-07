@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Сайт Евгения Кирилова — «Боковым зрением»
 
 ## Что это
@@ -17,6 +21,77 @@ Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind v4 (CSS-first, O
 Motion (motion/react) · GSAP 3.13+ · Lenis · d3-force · R3F v9 (точечно) ·
 MDX + gray-matter + zod · next/font (cyrillic+latin). Node 20+.
 Не выдумывать API: не уверен — проверить (`npm view`) или спросить.
+
+## Команды
+```bash
+npm run dev        # dev-сервер, http://localhost:3000
+npm run build      # прод-сборка (SSG); заодно валидирует контент: невалидный
+                   # frontmatter ломает сборку с указанием файла и поля
+npm run lint       # ESLint (eslint-config-next: core-web-vitals + typescript)
+npx tsc --noEmit   # проверка типов (отдельного скрипта нет)
+```
+Тестового фреймворка нет. Проверка изменений = сборка + ручной чек-лист
+`docs/проверка-в-браузере.md`.
+
+Контент-пайплайн (Python 3, `pip install pymupdf pillow`; нужен только при
+перегенерации контента — на сборке сайта Python не требуется):
+```bash
+python scripts/ingest_pdf.py              # Шаг 0.1: source/*.pdf → content/_raw/<book>/*.md
+python scripts/build_mdx.py               # Шаг 0.3: _raw → content/stories/*.mdx + плашки WebP
+python scripts/illustrations_manifest.py  # размеры плашек → content/illustrations.json
+```
+Артефакты пайплайна детерминированы и коммитятся.
+
+## Архитектура
+Алиас импорта: `@/*` → корень репозитория.
+
+**Две среды — две route-группы в `app/`** (реализация первого жёсткого правила):
+- `(vitrina)` — `/`, `/workshop`, `/contacts`. Layout оборачивает в `SmoothScroll`
+  (Lenis) и слой «офисной готики»: `GrainOverlay`, `CustomCursor`, `ZachinProvider`
+  (событие-зачин при входе из «Колеса»). GSAP-скролл-сцены.
+- `(chitalnya)` — `/read`, `/read/[book]/[story]`. Нативный скролл; `.reading-root` —
+  носитель тем чтения (светлая/сепия/тёмная), тему до отрисовки ставит пре-пейнт
+  скрипт в корневом `app/layout.tsx` (анти-FOUC).
+
+**Контент течёт в одну сторону:**
+`source/*.pdf` →(ingest_pdf.py)→ `content/_raw/` →(вычитка человеком)→
+(build_mdx.py)→ `content/stories/*.mdx` + `public/illustrations/` → загрузчики → SSG.
+- `content/schema.ts` — все zod-схемы и канонические ID (`THEME_IDS`, `BOOK_IDS`);
+  единственный источник типов контента.
+- `lib/content.ts` — загрузка рассказов/книг (fs + gray-matter, zod на сборке).
+- `lib/workshop.ts` — отдельный поток «Мастерской» (`content/workshop/*.md`),
+  намеренно изолирован как единственный «шов» под будущую CMS. Картинки записей —
+  в frontmatter; `content/illustrations.json` — только канонические плашки из PDF.
+- `lib/typograf.ts` — русская микротипографика применяется при SSG-рендере,
+  не в рантайме.
+
+**«Колесо»:** `lib/graph.ts` — чистые функции (`buildGraph`/`groupByTheme`/
+`themeDegree`/`reweight`) над Story+Theme. Потребители: доступный `WheelIndex`
+(канон навигации) и визуальный `WheelGraph` (d3-force + SVG, через next/dynamic
+ssr:false); раскладка — `lib/wheelLayout.ts`.
+
+**Движение — единый шлюз:** `components/motion/MotionProvider.tsx` считает
+`reduced = ОС prefers-reduced-motion ИЛИ ручной тумблер` (localStorage
+`kirilov:reduce-effects`); каждый эффект обязан читать его через
+`useReducedMotionSafe`. Атмосферные эффекты дополнительно gated по устройству
+(`components/haunted/useHauntedCapability.ts`: тач/слабое железо → статичная
+деградация).
+
+**Дизайн-токены:** `app/globals.css` — Tailwind v4 CSS-first (`@theme inline`
+поверх shadcn-переменных). Семантические цвета готики: `--sodium` (натриевый
+свет-«магия»), `--paper`, `--concrete`, `--monitor` — всё в OKLCH. Дуальная
+типографика — `lib/fonts.ts`: Source Serif 4 («душа», проза) против Inter +
+JetBrains Mono («система», UI); сабсеты cyrillic+latin обязательны.
+
+**Перф-конфиг:** `next.config.ts` — React Compiler включён (автомемоизация
+островов), AVIF/WebP, суженные deviceSizes под реальные размеры плашек.
+
+**Не runtime-код:** `ds-bundle/` — экспорт дизайн-системы для claude.ai/design
+(генерируется design-sync); `content/_raw/` — промежуточный этап пайплайна.
+
+**docs/** сверх концепции и тех-спецификации: `отложенное.md` (трекер отложенных
+и ручных задач), `definition-of-done.md` (статус §13), `проверка-в-браузере.md`
+(ручной чек-лист), `перформанс.md` (метод и бюджеты CWV).
 
 ## Жёсткие правила (рельсы — нарушать нельзя)
 - Две среды: (vitrina) — со скроллом и моушеном; (chitalnya) — БЕЗ Lenis и тяжёлого
