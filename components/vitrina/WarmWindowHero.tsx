@@ -14,15 +14,17 @@ import { useHauntedCapability } from "@/components/haunted/useHauntedCapability"
 
 const COLD_PANES = new Set([2, 9]); // окна с «системным» свечением монитора (§4 «Машина»)
 
-// Тизер-«Колесо» на стене (§4/§8): кольцо с ВЕСОМ + один горящий путь — тема макс.
-// степени (та же, что горит в графе ниже; вычисляется из degrees, не хардкод → после
-// вычитки themes[] пересоберётся сам). Детерминированная укладка (seed) → одинакова на
-// сервере и клиенте (без hydration-mismatch). Декоративный SVG, реального графа не
-// заменяет; статичен (движется только тёплое окно — §10).
+// Тизер-«Колесо» на стене (§4/§8): кольцо с ВЕСОМ (пунктирная орбита) + ОДИН горящий
+// путь — ломаная цепочка хаб → 2 излома → тема макс. степени (та же, что горит в графе
+// ниже; вычисляется из degrees, не хардкод → после вычитки themes[] пересоберётся сам).
+// Тихие «рассказы» — короткие спицы у своих тем, не пыль через всё кольцо.
+// Детерминированная укладка (mulberry32, seed 21 — проверен: изломы ≥22px от узлов
+// кольца) → одинакова на сервере и клиенте (без hydration-mismatch). Декоративный SVG,
+// реального графа не заменяет; статичен (движется только тёплое окно — §10).
 function buildHint(degrees: Record<string, number>) {
   const CX = 120;
-  const CY = 116;
-  const R = 86;
+  const CY = 118;
+  const R = 84;
   const clampR = (v: number, lo: number, hi: number) =>
     Math.max(lo, Math.min(hi, v));
 
@@ -35,7 +37,7 @@ function buildHint(degrees: Record<string, number>) {
       deg,
       x: CX + Math.cos(ang) * R,
       y: CY + Math.sin(ang) * R,
-      r: clampR(2.5 + deg * 0.28, 2.5, 8.5), // вес → радиус узла
+      r: clampR(2 + deg * 0.22, 2, 6), // вес → радиус, без жирного блоба
     };
   });
   // горит тема макс. степени (тай-брейк — канон-порядок: reduce с «>» держит первую)
@@ -51,32 +53,43 @@ function buildHint(degrees: Record<string, number>) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 
-  // пыль горящего пути (тянется к лит-теме) + тихая пыль (к случайным темам)
-  const litDust = Array.from({ length: 7 }, () => {
-    const k = 0.32 + rnd() * 0.5;
+  // ОДИН горящий путь: центр → 2 излома → горящая тема (цепочка, не звезда);
+  // изломы смещены вдоль нормали к лучу — путь читается как маршрут
+  const nx = -(lit.y - CY);
+  const ny = lit.x - CX;
+  const nlen = Math.hypot(nx, ny) || 1;
+  const bends = [0.34, 0.66].map((k) => {
+    const off = (rnd() - 0.5) * 26;
     return {
-      x: CX + (lit.x - CX) * k + (rnd() - 0.5) * 14,
-      y: CY + (lit.y - CY) * k + (rnd() - 0.5) * 14,
+      x: CX + (lit.x - CX) * k + (nx / nlen) * off,
+      y: CY + (lit.y - CY) * k + (ny / nlen) * off,
       lit: true,
     };
   });
-  const links = litDust.map((d) => ({
-    x1: d.x,
-    y1: d.y,
-    x2: lit.x,
-    y2: lit.y,
+  const chain = [{ x: CX, y: CY }, ...bends, { x: lit.x, y: lit.y }];
+  const links = chain.slice(1).map((p, i) => ({
+    x1: chain[i].x,
+    y1: chain[i].y,
+    x2: p.x,
+    y2: p.y,
     lit: true,
   }));
-  const quiet = Array.from({ length: 6 }, () => {
-    const t = ring[Math.floor(rnd() * ring.length)];
-    const k = 0.3 + rnd() * 0.5;
-    const x = CX + (t.x - CX) * k + (rnd() - 0.5) * 16;
-    const y = CY + (t.y - CY) * k + (rnd() - 0.5) * 16;
-    links.push({ x1: x, y1: y, x2: t.x, y2: t.y, lit: false }); // холодное ребро
-    return { x, y, lit: false };
-  });
 
-  return { ring, dust: [...litDust, ...quiet], links, litId: lit.id };
+  // тихие «рассказы»: по одной точке у КАЖДОЙ 2-й негорящей темы,
+  // коротким штрихом к СВОЕЙ теме (спица), не через всё кольцо
+  const quiet = ring
+    .filter((t) => t.id !== lit.id)
+    .filter((_, i) => i % 2 === 0)
+    .slice(0, 4)
+    .map((t) => {
+      const k = 0.72 + rnd() * 0.12; // близко к теме
+      const x = CX + (t.x - CX) * k;
+      const y = CY + (t.y - CY) * k;
+      links.push({ x1: x, y1: y, x2: t.x, y2: t.y, lit: false }); // холодная спица
+      return { x, y, lit: false };
+    });
+
+  return { ring, dust: [...bends, ...quiet], links, litId: lit.id, CX, CY, R };
 }
 
 export function WarmWindowHero({
@@ -87,7 +100,7 @@ export function WarmWindowHero({
   const { level } = useHauntedCapability();
   const haunted = level === "full";
   // тизер зависит только от степеней (build-time) — стабилен между рендерами
-  const { ring, dust, links, litId } = useMemo(
+  const { ring, dust, links, litId, CX, CY, R } = useMemo(
     () => buildHint(degrees),
     [degrees],
   );
@@ -124,9 +137,13 @@ export function WarmWindowHero({
       <div className="vignette" aria-hidden />
 
       {/* «созвездие» тем — декоративный тизер «Колеса» (точка входа, не лаборатория):
-          кольцо с весом, горит тема макс. степени = карта ниже. Статичен (§10). */}
+          кольцо с весом на пунктирной орбите, горящий путь хаб→тема макс. степени =
+          карта ниже. Лежит на «тихой стене» (::before гасит сетку окон). Статичен (§10). */}
       <div className="wheel-hint" aria-hidden>
         <svg viewBox="0 0 240 240">
+          {/* орбита и хаб — первыми (под рёбрами) */}
+          <circle cx={CX} cy={CY} r={R} className="th-orbit" />
+          <circle cx={CX} cy={CY} r={2} className="st-node lit" />
           {links.map((l, i) => (
             <line
               key={i}
@@ -152,7 +169,7 @@ export function WarmWindowHero({
             return (
               <g key={t.id}>
                 {lit && (
-                  <circle cx={t.x} cy={t.y} r={t.r + 5} className="th-halo" />
+                  <circle cx={t.x} cy={t.y} r={t.r + 4} className="th-halo" />
                 )}
                 <circle
                   cx={t.x}
@@ -174,7 +191,8 @@ export function WarmWindowHero({
             );
           })}
         </svg>
-        <span className="cap">↗ колесо · точка входа</span>
+        {/* «↓» — реальный граф ниже по скроллу, не сбоку */}
+        <span className="cap">↓ колесо · точка входа</span>
       </div>
 
       {/* реальный контент сцены */}
