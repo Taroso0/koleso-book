@@ -325,7 +325,9 @@ export function WheelCanvas({
             marginTop: -14,
           }}
         >
-          <p className="font-sans text-sm font-medium">{previewNode.label}</p>
+          <p className="font-sans text-sm font-medium text-card-foreground">
+            {previewNode.label}
+          </p>
           {previewNode.firstLine && (
             <p className="mt-1 line-clamp-3 font-serif text-xs leading-snug text-muted-foreground">
               {previewNode.firstLine}

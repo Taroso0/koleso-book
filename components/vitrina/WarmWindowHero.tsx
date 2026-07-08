@@ -8,13 +8,6 @@ import { HeroZachin } from "./HeroZachin";
 
 const KICKER_LINE = "03:14 · опенспейс пуст · кто-то не выключил свет";
 
-// Пре-пейнт гейт зачина: исполняется парсером до отрисовки секции. Логика сознательно
-// дублирует решение HeroZachin — единственный способ решить ДО гидрации. Гейтит все
-// условия синхронно (ОС reduced, prefers-reduced-data, saveData, ручной тумблер,
-// «уже играли»). no-JS: скрипт не исполнится → строка видима (паритет). HeroZachin
-// снимает атрибут в layout-эффекте в любом исходе.
-const ZACHIN_BOOT = `try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!matchMedia("(prefers-reduced-data: reduce)").matches&&!(navigator.connection&&navigator.connection.saveData)&&localStorage.getItem("kirilov:reduce-effects")!=="1"&&!sessionStorage.getItem("zachin:hero"))document.documentElement.setAttribute("data-zachin-boot","")}catch(e){}`;
-
 // «Тёплое окно» — арт-директированный первый экран «Витрины» (§4/§8/§10): одинокое тёплое
 // окно (горит с ПЕРВОГО пикселя, не на :hover) в холодной ночной громаде здания — свет по
 // Хопперу. Сцена статична и полностью читаема без JS; useHauntedCapability добавляет
@@ -208,9 +201,10 @@ export function WarmWindowHero({
       {/* реальный контент сцены */}
       <div className="copy">
         {/* кикер — <div> (StoryOpening рендерит свой <p>, p-в-p невалиден). Первая
-            строка собирается каскадом на входе (§5/§9) через HeroZachin. */}
+            строка собирается каскадом на входе (§5/§9) через HeroZachin. Пре-пейнт
+            boot-гейт (ZACHIN_BOOT) живёт в серверном page.tsx — не в этом клиентском
+            компоненте (React 19 не исполняет <script> в клиентском дереве). */}
         <div className="kicker">
-          <script dangerouslySetInnerHTML={{ __html: ZACHIN_BOOT }} />
           <HeroZachin text={KICKER_LINE} />
           &nbsp;
           <span className="cur" aria-hidden>
