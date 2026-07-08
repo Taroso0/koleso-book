@@ -778,3 +778,173 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
     oklch(0.968 0.006 160) 100% /* = :root --background (база бетона, шва снизу нет) */
   );
 }
+
+/* ════════ §6: голос системных состояний (лоадер · 404 · пусто) ════════
+   Дуальный регистр §5: машина = моно, душа = сериф. Лоадер и 404 — тёмная сцена
+   «офис ночью»: контейнеры несут класс .dark (в репо :root светлый), поэтому
+   var(--background)/--foreground резолвятся тёмными. Движение — под no-preference,
+   паритет — под reduce. Разряд «404» живёт в самом GlitchText; здесь — сцена/лоадер/пусто. */
+
+/* лоадер: моно-регистр + натриевая сканирующая черта (CSS, без JS) */
+.system-loader {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.1rem;
+  padding: 2rem;
+  text-align: center;
+  background: var(--background);
+}
+.system-loader__eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sodium);
+}
+.system-loader__line {
+  font-size: clamp(1rem, 2.4vw, 1.6rem);
+  font-weight: 500;
+  color: var(--foreground);
+  max-width: 26ch;
+  text-wrap: balance;
+}
+.system-loader__scan {
+  width: min(58vw, 380px);
+  height: 1.5px;
+  margin-top: 0.6rem;
+  background: color-mix(in oklab, var(--foreground) 18%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+.system-loader__scan::after {
+  /* бегущий натриевый блик — «сборка» */
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--sodium);
+  box-shadow: 0 0 10px var(--sodium);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .system-loader__scan::after {
+    animation: system-scan 1.6s ease-in-out infinite;
+  }
+}
+@keyframes system-scan {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+/* reduced: черта статична и не бежит — но остаётся натриевой (символ, не «выключено») */
+@media (prefers-reduced-motion: reduce) {
+  .system-loader__scan::after {
+    position: static;
+    width: 100%;
+    opacity: 0.5;
+  }
+}
+
+/* 404: своя «офисная готика» (слой Витрины сюда не доходит — сцена под корневым layout) */
+.notfound {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 2rem;
+  text-align: center;
+  background: radial-gradient(
+    135% 120% at 70% 16%,
+    oklch(0.27 0.02 256),
+    var(--background) 55%
+  );
+}
+.notfound__eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sodium);
+}
+.notfound__code {
+  font-size: clamp(5rem, 20vw, 13rem);
+  font-weight: 600;
+  line-height: 0.9;
+}
+.notfound__line {
+  font-size: clamp(1.25rem, 2.9vw, 2rem);
+  font-weight: 420;
+  color: var(--foreground);
+  max-width: 24ch;
+  text-wrap: balance;
+}
+.notfound__back {
+  margin-top: 1.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* тёплое окно, «замеченное боковым зрением» — на краю поля, частично за кадром */
+.notfound__periph {
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(120px, 15vw, 200px);
+  aspect-ratio: 5 / 7;
+  opacity: 0.5;
+  background: linear-gradient(
+    160deg,
+    oklch(0.93 0.1 90),
+    var(--sodium) 46%,
+    oklch(0.66 0.15 70)
+  );
+  box-shadow: 0 0 46px -6px var(--sodium);
+  border-radius: 2px;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .notfound__periph {
+    animation: periph-flick 6.5s ease-in-out infinite;
+  }
+}
+@keyframes periph-flick {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  47% {
+    opacity: 0.36;
+  }
+  48% {
+    opacity: 0.5;
+  }
+}
+
+/* пусто: сериф + моно-приписка, покой (светлое — встраивается в страницу) */
+.empty-state {
+  margin-top: 3.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 3rem;
+  text-align: center;
+}
+.empty-state__line {
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  font-weight: 420;
+  color: var(--muted-foreground);
+  max-width: 22ch;
+  margin-inline: auto;
+  text-wrap: balance;
+}
+.empty-state__note {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}

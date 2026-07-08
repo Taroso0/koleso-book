@@ -2,7 +2,9 @@ import Link from "next/link";
 import { Reveal } from "@/components/motion/Reveal";
 import { AccentLine } from "@/components/motion/AccentLine";
 import { WorkshopCard } from "@/components/workshop/WorkshopCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { getWorkshopEntries } from "@/lib/workshop";
+import { systemVoice } from "@/content/systemVoice";
 
 export const metadata = {
   title: "Мастерская — Боковым зрением",
@@ -49,14 +51,7 @@ export default function WorkshopIndex() {
           ))}
         </Reveal>
       ) : (
-        <div className="mt-14 border-t border-border pt-12 text-center">
-          <p className="font-serif text-lg leading-prose text-muted-foreground">
-            Здесь пока тихо. Хотя кто-то только что вышел.
-          </p>
-          <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            Стол ещё накрывается
-          </p>
-        </div>
+        <EmptyState line={systemVoice.empty.workshop} note="Стол ещё накрывается" />
       )}
     </main>
   );
