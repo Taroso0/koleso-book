@@ -56,7 +56,10 @@ export function StoryOpening({ text, slug, variant, className, onDone }: StoryOp
     let split: SplitText | null = null;
     const ctx = gsap.context(() => {
       split = new SplitText(el, {
-        type: v === "cascade" ? "chars" : "words",
+        // cascade: words,chars — буквы вложены в слова-обёртки (inline-block),
+        // чтобы длинная строка (кикер hero, узкий десктоп/мобильный) не рвалась
+        // ПОСРЕДИ слова. pieces ниже для cascade — по-прежнему split.chars.
+        type: v === "cascade" ? "words,chars" : "words",
         aria: "auto",
       });
       const pieces = v === "cascade" ? split.chars : split.words;

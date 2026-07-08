@@ -513,6 +513,47 @@ html[data-reading-mode="paged"] [data-reading-content] {
   box-shadow: 0 0 14px var(--sodium);
   border-radius: 2px;
 }
+
+/* ── зачин: первая строка как событие (§5/§9) ── */
+.warm-hero .zwrap {
+  display: inline-block;
+}
+.warm-hero .zline {
+  display: inline-block;
+  margin: 0;
+}
+/* пре-пейнт гейт: строка и курсор скрыты до решения HeroZachin (без CLS — visibility) */
+html[data-zachin-boot] .warm-hero .zwrap,
+html[data-zachin-boot] .warm-hero .kicker .cur {
+  visibility: hidden;
+}
+/* во время события: курсор ждёт конца строки (animation:none глушит warm-blink —
+   иначе keyframes перебьёт opacity), черта не прочерчена */
+.warm-hero[data-zachin="play"] .kicker .cur {
+  opacity: 0;
+  animation: none;
+}
+.warm-hero[data-zachin="play"] .accent-rule {
+  transform: scaleX(0);
+}
+.warm-hero .accent-rule {
+  transform-origin: left center;
+}
+/* после события: черта прочерчивается (transform — без layout/CLS) */
+@media (prefers-reduced-motion: no-preference) {
+  .warm-hero[data-zachin="done"] .accent-rule {
+    animation: rule-draw 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+@keyframes rule-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 .warm-hero .sub {
   font-family: var(--font-prose), Georgia, serif;
   font-size: clamp(1rem, 1.45vw, 1.22rem);
