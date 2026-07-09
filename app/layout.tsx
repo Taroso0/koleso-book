@@ -67,6 +67,20 @@ const SITE_JSON_LD = {
 // <script>); атрибуты на <html> → нужен suppressHydrationWarning.
 const READING_INIT = `(function(){try{var d=document.documentElement,s=localStorage;var t=s.getItem('kirilov:reading-theme');if(t==='sepia'||t==='dark')d.dataset.readingTheme=t;if(s.getItem('kirilov:reading-mode')==='paged')d.dataset.readingMode='paged';}catch(e){}})();`;
 
+// Пре-пейнт гейт зачина hero: ставит data-zachin-boot на <html> ДО первой отрисовки, если
+// событие будет играть — иначе статичная строка кикера мигнёт и исчезнет. Логика сознательно
+// дублирует HeroZachin: решить нужно ДО гидрации.
+// Почему в КОРНЕВОМ layout, а не рядом с hero: React 19 варнит про <script> только когда
+// СОЗДАЁТ его узел на клиенте (createInstance — маунт/клиентская навигация; там скрипт всё
+// равно обезврежен и не исполняется). Корневой layout гидратируется однажды и не
+// пересоздаётся → варнинга нет. Тот же довод, что у READING_INIT выше.
+// Атрибут глобальный (ставится на любом маршруте), но безвредный: CSS скоупит его строго на
+// `.warm-hero` (есть только на хабе). Побочно полезно — при переходе на «/» строка уже скрыта
+// до решения HeroZachin. На client-nav скрипт не нужен: setPhase("armed") из layout-эффекта
+// флашится синхронно ДО пейнта. no-JS: скрипт не исполнится → строка видима (паритет).
+// HeroZachin снимает атрибут в layout-эффекте в ЛЮБОМ исходе.
+const ZACHIN_BOOT = `try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!matchMedia("(prefers-reduced-data: reduce)").matches&&!(navigator.connection&&navigator.connection.saveData)&&localStorage.getItem("kirilov:reduce-effects")!=="1"&&!sessionStorage.getItem("zachin:hero"))document.documentElement.setAttribute("data-zachin-boot","")}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -78,6 +92,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: READING_INIT }} />
+        <script dangerouslySetInnerHTML={{ __html: ZACHIN_BOOT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}

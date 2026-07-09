@@ -13,15 +13,6 @@ import { buildGraph, themeDegree } from "@/lib/graph";
 import { computeWheelLayout } from "@/lib/wheelLayout";
 import { BOOK_IDS } from "@/content/schema";
 
-// Пре-пейнт гейт зачина hero: исполняется парсером ДО отрисовки секции. Живёт в ЭТОМ
-// серверном компоненте (не в клиентском WarmWindowHero — React 19 не исполняет <script>
-// в клиентском дереве и шумит варнингом). Логика сознательно дублирует HeroZachin —
-// единственный способ решить до гидрации. Гейтит синхронно все условия (ОС reduced,
-// prefers-reduced-data, saveData, ручной тумблер kirilov:reduce-effects, «уже играли»).
-// no-JS: скрипт не исполнится → строка видима (паритет). HeroZachin снимает атрибут в
-// layout-эффекте в любом исходе. Конвенция — как READING_INIT в корневом app/layout.tsx.
-const ZACHIN_BOOT = `try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!matchMedia("(prefers-reduced-data: reduce)").matches&&!(navigator.connection&&navigator.connection.saveData)&&localStorage.getItem("kirilov:reduce-effects")!=="1"&&!sessionStorage.getItem("zachin:hero"))document.documentElement.setAttribute("data-zachin-boot","")}catch(e){}`;
-
 // Хаб и точка входа — «Колесо» (§3/§9). Шаг 4.1: хаб-лендинг со скролл-сценами
 // «Витрины» (§7). Герой (Колесо) спокоен; ниже по скроллу проявляются тизеры-«лучи»
 // Автор/Книги/Мастерская — движется только проявление (§10), всё под reduced-motion.
@@ -41,11 +32,9 @@ export default function VitrinaHome() {
 
   return (
     <main id="main" tabIndex={-1}>
-      {/* Пре-пейнт гейт зачина — до hero в DOM (парсер исполнит раньше пейнта строки). */}
-      <script dangerouslySetInnerHTML={{ __html: ZACHIN_BOOT }} />
-
       {/* Первый экран — «Тёплое окно»: окно горит с первого пикселя (§4/§8/§10).
-          Несёт единственный <h1> страницы; full-bleed, вне контентного контейнера. */}
+          Несёт единственный <h1> страницы; full-bleed, вне контентного контейнера.
+          Пре-пейнт гейт зачина (data-zachin-boot) живёт в корневом app/layout.tsx. */}
       <WarmWindowHero degrees={degrees} />
 
       {/* Якорь «Колеса» — всегда в потоке (0-высоты, шва не рисует). Десктоп: стоит
