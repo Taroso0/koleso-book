@@ -7,13 +7,21 @@
   "cssEntry": ".design-sync/assets/styles.css",
   "componentSrcMap": {
     "Button": "components/ui/button.tsx",
+    "EmptyState": "components/ui/EmptyState.tsx",
     "KindBadge": "components/workshop/KindBadge.tsx",
     "ProseBody": "components/reader/ProseBody.tsx",
     "GlitchText": "components/haunted/GlitchText.tsx",
     "StoryOpening": "components/haunted/StoryOpening.tsx",
+    "SystemLoader": "components/haunted/SystemLoader.tsx",
+    "StaticGrain": "components/haunted/StaticGrain.tsx",
+    "FogReveal": "components/haunted/FogReveal.tsx",
+    "Reveal": "components/motion/Reveal.tsx",
+    "AccentLine": "components/motion/AccentLine.tsx",
     "WorkshopCard": "components/workshop/WorkshopCard.tsx",
     "IllustrationPlate": "components/reader/IllustrationPlate.tsx",
-    "WheelIndex": "components/wheel/WheelIndex.tsx"
+    "WheelIndex": "components/wheel/WheelIndex.tsx",
+    "NotFoundScene": "components/vitrina/NotFoundScene.tsx",
+    "WarmWindowHero": "components/vitrina/WarmWindowHero.tsx"
   },
   "guidelinesGlob": ["docs/концепция.md"],
   "readmeHeader": ".design-sync/conventions.md",
@@ -25,7 +33,15 @@
     "StoryOpening": "/** Текст первой строки («первая строка как событие»). */\ntext: string;\n/** Источник детерминированного варианта, если variant не задан. */\nslug?: string;\n/** Шаблон кинетики зачина. */\nvariant?: \"rise\" | \"cascade\" | \"glitch\";\nclassName?: string;\nonDone?: () => void;",
     "WorkshopCard": "/** Запись ленты «Мастерской». */\nentry: {\n  slug: string;\n  title: string;\n  kind: \"fragment\" | \"draft\" | \"note\" | \"illustration\";\n  date: string;\n  summary?: string;\n  themes?: string[];\n  image?: string;\n  imageWidth?: number;\n  imageHeight?: number;\n  imageAlt?: string;\n  published?: boolean;\n  body: string;\n};",
     "IllustrationPlate": "/** Иллюстрация-плашка (editorial, «с воздухом»). */\nillustration: {\n  src: string;\n  width: number;\n  height: number;\n  alt: string;\n  artist?: string;\n};\n/** Приоритетная загрузка (LCP). */\npriority?: boolean;",
-    "WheelIndex": "/** Граф «Колеса»: узлы (темы/рассказы) + рёбра членства «рассказ ↔ тема». */\ngraph: {\n  nodes: Array<{ id: string; kind: \"theme\" | \"story\"; label: string; book?: string; firstLine?: string }>;\n  links: Array<{ source: string; target: string; weight: number }>;\n};"
+    "WheelIndex": "/** Граф «Колеса»: узлы (темы/рассказы) + рёбра членства «рассказ ↔ тема». */\ngraph: {\n  nodes: Array<{ id: string; kind: \"theme\" | \"story\"; label: string; book?: string; firstLine?: string }>;\n  links: Array<{ source: string; target: string; weight: number }>;\n};",
+    "EmptyState": "/** Реплика «одержимой системы» (сериф, «душа»). По умолчанию — канон из systemVoice. */\nline?: string;\n/** Моно-приписка под репликой («система»). */\nnote?: string;",
+    "SystemLoader": "/** Моно-надпись регистра над репликой (что именно грузится). */\nlabel?: string;",
+    "StaticGrain": "// Пропов нет: фиксированный полноэкранный слой зерна (aria-hidden, pointer-events: none).",
+    "NotFoundScene": "/** Проигрывать «разряд» на «404» (по умолчанию true). На статичном снимке — false. */\nplay?: boolean;",
+    "Reveal": "/** Что проявляем при входе в кадр. */\nchildren?: React.ReactNode;\nclassName?: string;\n/** Начальный сдвиг вниз, px (по умолчанию 14). */\ny?: number;\n/** Если задан — стаггер прямых детей, сек (напр. 0.06). */\nstagger?: number;\n/** ScrollTrigger start (по умолчанию \"top 85%\"). */\nstart?: string;\n/** Проявить один раз и не прятать обратно (по умолчанию true). */\nonce?: boolean;",
+    "FogReveal": "/** Что проявляем «из тумана». */\nchildren?: React.ReactNode;\nclassName?: string;\n/** Стартовое размытие, px (по умолчанию 22). */\nblur?: number;\n/** ScrollTrigger start (по умолчанию \"top 80%\"). */\nstart?: string;",
+    "AccentLine": "className?: string;\n/** ScrollTrigger start (по умолчанию \"top 85%\"). */\nstart?: string;",
+    "WarmWindowHero": "/** Степень каждой темы «Колеса» (id темы → число рассказов): задаёт вес орбиты и горящий путь. */\ndegrees: Record<string, number>;"
   },
   "projectId": "e0f3243c-8da7-432f-82c9-fabc7c616e25"
 }

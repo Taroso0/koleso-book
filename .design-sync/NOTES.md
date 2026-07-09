@@ -9,37 +9,48 @@
   `--entry ./.design-sync/entry.tsx` (реэкспортирует компоненты из `components/*`).
 - Глобал бандла нормализуется в **`window.Kirilov`** (с заглавной).
 
-## Что синхронизируется (8 компонентов)
+## Что синхронизируется (16 компонентов)
 
-Группа в DS = папка-источник под `components/`:
-- **general**: `Button` (`components/ui/button.tsx`) — Radix Slot.
+Группа в DS = папка-источник под `components/` (`ui/` конвертер кладёт в `general`):
+- **general**: `Button` (`components/ui/button.tsx`) — Radix Slot; `EmptyState`.
 - **workshop**: `KindBadge`, `WorkshopCard`.
 - **reader**: `ProseBody`, `IllustrationPlate`.
 - **haunted**: `GlitchText`, `StoryOpening` (motion/react, gsap; провайдер НЕ нужен —
-  `useReducedMotionSafe` падает в ОС-фолбэк без `<MotionProvider>`).
+  `useReducedMotionSafe` падает в ОС-фолбэк без `<MotionProvider>`); `SystemLoader`, `StaticGrain`
+  (оба чистые, без JS); `FogReveal`.
+- **motion**: `Reveal`, `AccentLine` (gsap/ScrollTrigger; провайдеро-безопасны).
 - **wheel**: `WheelIndex`.
+- **vitrina**: `NotFoundScene`, `WarmWindowHero` (герой тянет `HeroZachin` → `next/dynamic`, см. шимы).
 
 **НЕ синхронизируемо** (осознанно вне синка — не рендерятся изолированно/достоверно):
 - `BookSwitcher` — `getBooks()` читает `node:fs`/`process.cwd()` в рантайме (несовместимо с браузером).
 - `ReduceMotionToggle` — требует `<MotionProvider>` (`useMotionPreference` бросает исключение).
 - `ContinueReading` — localStorage; без данных рендерит `null`.
-- `WheelGraph`/`WheelCanvas` (d3-force остров, `next/dynamic ssr:false`), `GrainCanvas` (three/WebGL),
-  `GrainOverlay`/`FogReveal`/`CustomCursor` (full-viewport canvas/overlay), `SmoothScroll` (Lenis),
-  `ReaderShell`/`Reader` (page-острова), провайдеры/хуки/утилиты (`MotionProvider`, `ZachinProvider`,
-  `useReducedMotionSafe`, `useIsoLayoutEffect`, `useHauntedCapability`, `zachinContext`, `reading.ts`).
+- `CustomCursor` — вне «способного десктопа» рендерит `null`.
+- `HeroZachin` — не самостоятельный визуал: сессионный гейт зачина, едет внутри `WarmWindowHero`.
+- `ThemeNode`/`StoryNode` — голые SVG-фрагменты (`<circle>`/`<text>` без `<svg>`-корня).
+- `WheelGraph`/`WheelCanvas` (d3-force остров, роутер), `GrainCanvas` (three/WebGL), `GrainOverlay`
+  (обёртка над `StaticGrain`/WebGL), `SmoothScroll` (Lenis), `ReaderShell`/`Reader` (page-острова),
+  провайдеры/хуки/утилиты (`MotionProvider`, `ZachinProvider`, `useReducedMotionSafe`,
+  `useIsoLayoutEffect`, `useHauntedCapability`, `zachinContext`, `reading.ts`, `systemVoice.ts`).
   Чтобы добавить любой из них — нужен реальный изоляционный сценарий (данные/провайдер/без WebGL).
 
-## Шим Next-рантайма (next/link, next/image) — для редакционных компонентов
+## Шим Next-рантайма (next/link, next/image, next/dynamic) — для редакционных компонентов
 
-`WorkshopCard`/`WheelIndex` импортируют `next/link`, `WorkshopCard`/`IllustrationPlate` — `next/image`.
+`WorkshopCard`/`WheelIndex`/`NotFoundScene`/`WarmWindowHero` импортируют `next/link`,
+`WorkshopCard`/`IllustrationPlate` — `next/image`, `HeroZachin` (внутри героя) — `next/dynamic`.
 Бандлер esbuild инлайнит ВСЁ из node_modules (externals — только react-семейство), поэтому реальные
 `next/link`/`next/image` затягивают Next-рантайм и в standalone-бандле падают: **`ReferenceError:
 process is not defined`** (несколько `process.env.__NEXT_*` без `typeof`-guard) — и это валит ВЕСЬ IIFE,
 т.е. даже Button становится «root empty». Решение:
 - `.design-sync/shims/next-link.tsx` → `<a href {…}>`; `.design-sync/shims/next-image.tsx` → `<img>`
   (отбрасывают next-специфичные пропы; вёрстка достоверна, теряется только оптимизация/префетч).
-- `.design-sync/tsconfig.bundle.json` инлайнит `compilerOptions.paths`: `@/*`, `next/link`, `next/image`
-  → шимы. `cfg.tsconfig` указывает на него. Реальный `tsconfig.json` приложения НЕ трогаем.
+- `.design-sync/shims/next-dynamic.tsx` → `React.lazy` + `<Suspense fallback={null}>`. Наш вызов —
+  `dynamic(() => import(…).then(m => m.StoryOpening), { ssr:false })`, т.е. лоадер отдаёт КОМПОНЕНТ,
+  а не модуль → шим оборачивает результат в `{ default }`. `ssr`/`loading` игнорируются (в бандле
+  рендер всегда клиентский). Динамический `import()` esbuild инлайнит (iife, без сплиттинга).
+- `.design-sync/tsconfig.bundle.json` инлайнит `compilerOptions.paths`: `@/*`, `next/link`, `next/image`,
+  `next/dynamic` → шимы. `cfg.tsconfig` указывает на него. Реальный `tsconfig.json` приложения НЕ трогаем.
 
 ⚠️ **КРИТИЧЕСКАЯ ГОЧА (tsconfig-JSON-комментарии).** `tsconfigPathsPlugin` (lib/bundle.mjs) перед
 `JSON.parse` грубо вырезает `//`-комментарии регэкспом `(^|[^:])//.*$`. JSON-**ключ** `"//": "…"`
@@ -136,7 +147,7 @@ CSS — он НЕ в нашем бандле, править его руками
 селекторами → сервер их больше не извлекает и не классифицирует (ни как color, ни как «прочее»).
 Поэтому правка `tokenKinds` достигается чисткой CSS, а не редактированием oxlintrc.
 
-## Контракт API (`dtsPropsFor` — все 8 вручную)
+## Контракт API (`dtsPropsFor` — все вручную)
 
 - В synth-режиме (без dist `.d.ts`) ts-morph НЕ резолвит inline-типы с импортами (`VariantProps`,
   доменные типы `WorkshopEntry`/`Illustration`/`WheelGraph`) → пропы выходят пустыми. Поэтому тело
@@ -152,13 +163,29 @@ CSS — он НЕ в нашем бандле, править его руками
 
 ## Превью
 
-- `.design-sync/previews/<Name>.tsx` — авторские (8), импорт из `"kirilov"` (Rule 1 шимит на
+- `.design-sync/previews/<Name>.tsx` — авторские (16), импорт из `"kirilov"` (Rule 1 шимит на
   `window.Kirilov.<Name>`). Импорт через `@/components/...` в превью НЕ использовать.
 - Имена ячеек — латиницей с заглавной (`/^[A-Z]/`): кириллические экспорты не станут ячейками.
-- **Детерминизм motion в превью** (package-capture НЕ глушит анимации и НЕ эмулирует reduced-motion —
-  только `networkidle`+fonts/decode): `GlitchText` рендерим `play={false}` (чистый текст);
-  `StoryOpening` (GSAP entrance ~0.5с) успевает осесть до кадра — кадр чистый. Если будущий капчер
-  поймает «бледный» зачин — обернуть в провайдер reduced или показать статически.
+- **Детерминизм motion в превью.** `package-capture` НЕ глушит анимации и НЕ эмулирует
+  reduced-motion: `settle()` ждёт только `document.fonts.ready` + `img.decode()`, дальше сразу
+  скриншот. Значит любая JS-анимация длиннее ~0.5 с попадёт в кадр серединой. Правила:
+  - `GlitchText` — `play={false}`. Разряд длится `GLITCH_MS 1800` + `HOLD_MS 750`; кадр гарантированно
+    поймал бы недоматериализованный текст. По той же причине `NotFoundScene` получил проп-проброс
+    `play` (дефолт `true` — живая 404 не изменилась).
+  - `Reveal` (0.6 с), `AccentLine` (0.7 с), `FogReveal` (1.3 с), `WarmWindowHero` (каскад зачина +
+    `data-haunt`-мерцание) — превью патчит `window.matchMedia` на модульном уровне, отдавая
+    `prefers-reduced-motion: reduce`. Это законно: у каждого эффекта статический паритет РАВЕН
+    конечному состоянию (opacity 1, blur 0, scaleX 1, окно горит), так что карточка показывает
+    результат, а не «выключено». Патч ставится ДО маунта — `useReducedMotion` (motion/react) читает
+    `matchMedia` лениво, при первом вызове хука.
+  - `WarmWindowHero` дополнительно сеет `sessionStorage["zachin:hero"]="1"` — второй рубеж: гейт
+    `HeroZachin` (стр. 72, `played`) уйдёт в статику, даже если патч `matchMedia` перестанет работать.
+  - Скролл-примитивы обязаны получать `start="top bottom"`: иначе ScrollTrigger на статичной странице
+    не сработает и карточка уедет в `opacity:0` (вердикт `bad`/`thin`).
+  - CSS-анимации под `@media (prefers-reduced-motion: no-preference)` (`system-loader__scan`,
+    `notfound__periph`) патчем `matchMedia` НЕ гасятся (это CSS, не JS) и бесконечны — кадр ловит
+    произвольную фазу. Это норма: на renderHash не влияет (он от артефактов), грейд человеческий.
+  - `StoryOpening` (GSAP entrance ~0.5 с) успевает осесть до кадра — кадр чистый.
 - Редакционные превью используют синтетику: `WorkshopCard` — текстовые entry без картинки;
   `IllustrationPlate` — `src` = data-URI SVG (демо-плейсхолдер); `WheelIndex` — фикс-граф литералом
   (демо-данные, не канон).
@@ -171,8 +198,20 @@ CSS — он НЕ в нашем бандле, править его руками
 
 ## Re-sync risks (на что смотреть в следующий синк)
 
+- **В проекте на remote лежит ЧУЖАЯ работа.** Кроме файлов design-sync там живут артефакты
+  дизайн-агента и пользователя: `design_handoff_*/`, `step3/`, `uploads/`, `screenshots/`,
+  `tweaks-panel.jsx`, `Шаг 1–5 — *.html`, `Разбор дизайна — *.html`, плюс серверные
+  `_ds_manifest.json` и `_adherence.oxlintrc.json`. Мы ими НЕ владеем. Удалять **только** пути из
+  `upload.deletePaths` вердикта драйвера. **Никогда** не гонять инкрементальную reconciliation-зачистку
+  (`list_files` → снести всё под `components/`, `_preview/`, `fonts/`, `guidelines/`, чего нет в
+  `ds-bundle/`) — это путь для НОВОГО пустого проекта, здесь он сметёт чужие хендоффы.
 - **Ассеты регенерируются.** На свежем клоне: `npm ci`, затем `cfg.buildCmd` (build+harvest)
   до конвертера; иначе `cfg.cssEntry` не существует.
+- **`scriptsSha` — информационный, не входит в партицию** (`lib/sync-hashes.mjs`: «Informational —
+  never a partition input»). Апгрейд скилла сам по себе не инвалидирует грейды. `sourceKey` тоже не
+  зависит от `componentSrcMap`/`dtsPropsFor` — только от `provider`/`storyImports`/`extraEntries`,
+  форков, `overrides`/`titleMap` и байтов `previews/<Name>.tsx`. Поэтому добавление компонентов
+  оставляет старые в `unchanged`, а `pendingGrade` = только новые.
 - **`.next` бывает протухшим — всегда гонять реальный `npm run build`, не только харвест.**
   Драйвер НЕ собирает; харвест читает то, что лежит в `.next/static/chunks`. Наличие чанка
   ≠ актуальность: можно отхарвестить старый билд и отгрузить CSS, отстающий от HEAD (так и
@@ -184,6 +223,9 @@ CSS — он НЕ в нашем бандле, править его руками
   Поэтому NOTES.md исключён из скана — `@source not` в `app/globals.css`. `conventions.md` НЕ
   исключать сознательно: его скан гарантирует, что названный там словарь классов существует в
   шипнутом CSS (нагрузочно для дизайн-агента). Симптом рецидива: `kind-tagged` в логе харвеста ≠ ~23.
+  Обратная сторона: в `conventions.md` нельзя называть класс, которого не должно быть. Абзац «важно
+  про утилиты» приводил в пример «отсутствующие» `mt-40`/`grid-cols-5` — и ровно этим их **создавал**
+  (оба были в шипнутом CSS). Заменено на `mt-<N>`/`grid-cols-<N>`: не кандидат для скана, смысл цел.
 - **Харвест предполагает ОДИН продакшн-CSS-чанк** в `.next/static/chunks/*.css`. Если чанков станет
   несколько — проверить порядок конкатенации в `harvest-assets.mjs` (каскад).
 - **Шим Next хрупок к версии Next:** если `next/link`/`next/image` сменят внутренний API/имя поддиры,
@@ -191,7 +233,7 @@ CSS — он НЕ в нашем бандле, править его руками
   редакционный компонент начнёт импортировать ещё какой-то `next/*` (напр. `next/navigation`) —
   добавить шим и путь в `tsconfig.bundle.json`.
 - **`tsconfig.bundle.json` — только чистый JSON** (см. критическую гочу выше).
-- **dtsPropsFor — ручной для всех 8**: рассинхрон с исходниками ловится глазами.
+- **dtsPropsFor — ручной для всех 16**: рассинхрон с исходниками ловится глазами.
 - **Синтетика в превью** (entry/illustration/graph, data-URI картинка) может разойтись с реальными
   типами при правке схем — превью просто перестанут собираться (видно в build-логе).
 - **woff2-хэши** next/font контентно-стабильны; имя CSS-чанка хэшируется — харвест глоббит по маске.
@@ -230,4 +272,4 @@ upload (sentinel → full writes → deletes дословно из `upload.delet
   Tailwind внутри `@supports (…backdrop-filter:var(--tw))` (был и до чистки — прежний «1 missing»);
   серверный `check_design_system` его НЕ флагал → undefined-ссылки он не проверяет, значит и эти 6
   не даст. Если порог превысит — глянуть `[TOKENS_MISSING]`.
-- render-check 8/8 чисто; `bad/thin/variantsIdentical = 0`.
+- render-check 16/16 чисто; `bad/thin/variantsIdentical = 0`.

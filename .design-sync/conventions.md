@@ -24,16 +24,18 @@ CSS-переменные — **используйте их для собстве
 - **Скругление:** токен `--radius` (+ `--radius-md`); утилиты `rounded-sm/-md/-lg`.
 
 > **Важно про утилиты.** В `_ds_bundle.css` материализован ТОЛЬКО тот набор
-> Tailwind-утилит, что уже использует сайт, — произвольные классы (`mt-40`,
-> `grid-cols-5` и т. п.) могут отсутствовать и не дадут стиля. Для своей вёрстки
+> Tailwind-утилит, что уже использует сайт, — произвольные классы (`mt-<N>`,
+> `grid-cols-<N>` и т. п.) могут отсутствовать и не дадут стиля. Для своей вёрстки
 > надёжнее всего инлайн-стили с `var(--…)` либо утилиты, которые точно есть
 > (сверьтесь с `_ds_bundle.css`). Токены `var(--*)` работают всегда.
 
 ## Где правда
 - Стили: `styles.css` → `fonts/fonts.css` + `_ds_bundle.css` (`:root`/`.dark` токены + утилиты).
 - Компоненты: `components/<группа>/<Имя>/<Имя>.prompt.md` и `<Имя>.d.ts` — контракт и примеры
-  каждого. Группы: `general` (Button), `workshop` (KindBadge, WorkshopCard),
-  `reader` (ProseBody, IllustrationPlate), `haunted` (GlitchText, StoryOpening), `wheel` (WheelIndex).
+  каждого. Группы: `general` (Button, EmptyState), `workshop` (KindBadge, WorkshopCard),
+  `reader` (ProseBody, IllustrationPlate), `haunted` (GlitchText, StoryOpening, SystemLoader,
+  StaticGrain, FogReveal), `motion` (Reveal, AccentLine), `wheel` (WheelIndex),
+  `vitrina` (NotFoundScene, WarmWindowHero).
 - Язык бренда: `guidelines/docs/концепция.md`.
 
 ## Button — API
@@ -56,6 +58,36 @@ CSS-переменные — **используйте их для собстве
   `WorkshopCard entry={…}`, `IllustrationPlate illustration={…}`, `WheelIndex graph={{nodes,links}}`
   (структуры — в `.d.ts`). В бандле `next/link` → нативный `<a>`, `next/image` → `<img>`: ссылки и
   картинки — обычные элементы, задавайте реальные `href`/`src`.
+
+## Состояния системы — API
+Три готовые сцены «одержимой системы». Каждая несёт свой фон и тему сама (`SystemLoader` и
+`NotFoundScene` — тёмные, с `dark` внутри), поэтому ставьте их full-bleed и **не** оборачивайте
+в свои контейнеры с фоном или отступами.
+- **SystemLoader** — фолбэк загрузки на весь экран. `label?` — моно-регистр над репликой
+  («Сборка мира», «Открываем рассказ»).
+- **EmptyState** — светлое пустое состояние внутри страницы. `line?` — сериф-реплика («душа»),
+  `note?` — моно-приписка.
+- **NotFoundScene** — сцена 404 целиком. `play?` — проигрывать «разряд» на «404» (по умолч. `true`;
+  для статичных снимков передавайте `false`).
+
+## Атмосфера и движение — API
+- **StaticGrain** — плёночное зерно на весь вьюпорт (`position: fixed`, `mix-blend-mode: overlay`).
+  Без пропов; кладите **один раз** поверх сцены — два слоя сложатся по непрозрачности.
+- **Reveal** — контент всплывает и проступает при входе в кадр: `children`, `y?`, `stagger?`
+  (шаг для прямых детей, сек), `start?`, `once?`.
+- **FogReveal** — выход из размытия («из тумана»): `children`, `blur?`, `start?`. Жест тяжёлый —
+  один объект на экран.
+- **AccentLine** — короткая натриевая черта под заголовком: `className?`, `start?`.
+- `start` — порог ScrollTrigger. Для контента, который уже в кадре, ставьте `start="top bottom"`,
+  иначе проявление не запустится.
+- У всех есть **статический паритет**: при `prefers-reduced-motion: reduce` показывается конечное
+  состояние, а не «выключено».
+
+## Первый экран — API
+- **WarmWindowHero** — готовый герой «Витрины»: ночная громада здания, одно тёплое окно и тизер
+  «Колеса» на стене. Несёт единственный `<h1>` страницы и `dark`, ставится full-bleed.
+  `degrees: Record<string, number>` — id темы → число рассказов: задаёт вес орбиты и выбирает тему,
+  к которой тянется горящий путь.
 
 ## Пример
 ```tsx

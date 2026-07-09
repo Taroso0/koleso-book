@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["./*"],
       "next/link": ["./.design-sync/shims/next-link.tsx"],
-      "next/image": ["./.design-sync/shims/next-image.tsx"]
+      "next/image": ["./.design-sync/shims/next-image.tsx"],
+      "next/dynamic": ["./.design-sync/shims/next-dynamic.tsx"]
     }
   }
 }
