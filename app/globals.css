@@ -871,10 +871,15 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
   text-transform: uppercase;
   color: var(--sodium);
 }
+/* color обязателен: body{color:var(--foreground)} резолвится на :root (светлая тема) и
+   наследуется внутрь .dark уже ВЫЧИСЛЕННЫМ тёмным цветом — .dark меняет переменную, а не
+   перевычисляет color там, где var(--foreground) не написан явно. Без этой строки «404»
+   выходит почти чёрным на почти чёрном (≈1.2:1, нарушение WCAG AA). */
 .notfound__code {
   font-size: clamp(5rem, 20vw, 13rem);
   font-weight: 600;
   line-height: 0.9;
+  color: var(--foreground);
 }
 .notfound__line {
   font-size: clamp(1.25rem, 2.9vw, 2rem);
@@ -883,11 +888,14 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
   max-width: 24ch;
   text-wrap: balance;
 }
+/* Та же ловушка наследования, что и у __code, но цена выше: это единственный выход со
+   страницы. Preflight ставит a{color:inherit}, поэтому цвет достаточно задать на абзаце. */
 .notfound__back {
   margin-top: 1.6rem;
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--foreground);
 }
 /* тёплое окно, «замеченное боковым зрением» — на краю поля, частично за кадром */
 .notfound__periph {
