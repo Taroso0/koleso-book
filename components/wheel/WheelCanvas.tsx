@@ -4,13 +4,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import type { WheelGraph, WheelNode } from "@/lib/graph";
-import { reweight, themeDegree } from "@/lib/graph";
+import {
+  readFractionByTheme,
+  reweight,
+  reweightRead,
+  themeDegree,
+} from "@/lib/graph";
 import { WHEEL_VIEW, computeWheelLayout, type WheelLayout } from "@/lib/wheelLayout";
 import { useReducedMotionSafe } from "@/components/motion/useReducedMotionSafe";
 import { useZachin } from "@/components/haunted/zachinContext";
 import { cn } from "@/lib/utils";
 import { ThemeNode, type NodeState } from "./ThemeNode";
 import { StoryNode } from "./StoryNode";
+import { useReadStories } from "./readStories";
 
 // Задержка «подержать» перед подсветкой узла — чтобы случайные пролёты мыши над
 // кругами при небыстром движении не захватывали их.
@@ -22,9 +28,10 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const radiusForDegree = (degree: number) => clamp(6 + degree * 0.7, 6, 20);
 
 // Визуальный граф «Колеса» (§5/§8). Базовые позиции — предрасчёт на сборке (проп
-// layout). При внимании к рассказу (наведение/клавиатурный фокус) колесо
-// перестраивается вокруг него (reweight + плавная анимация); под reduced-motion —
-// только подсветка, без reflow. Клавиатура: roving tabindex + стрелки (§11-B1).
+// layout). Два слоя перестройки: СТОЙКИЙ — память о прочитанном (reweightRead,
+// переживает перезагрузку) и ЖИВОЙ — внимание к узлу под курсором/фокусом (reweight,
+// поверх памяти). Под reduced-motion reflow нет, но след памяти рисуется — паритет,
+// а не «выключено». Клавиатура: roving tabindex + стрелки (§11-B1).
 export function WheelCanvas({
   graph,
   layout,
@@ -66,6 +73,14 @@ export function WheelCanvas({
   const degree = useMemo(() => themeDegree(graph), [graph]);
   const radiusOf = (id: string) => radiusForDegree(degree[id] ?? 0);
 
+  // Память: что прочитано в «Читальне» (localStorage, пост-маунт). «Колесо» только
+  // читает этот store — наполняет его Читальня.
+  const readSet = useReadStories(graph);
+  const readFraction = useMemo(
+    () => readFractionByTheme(graph, readSet),
+    [graph, readSet],
+  );
+
   // «Горит по умолчанию» — тема с макс. степенью (тай-брейк: канонический порядок).
   // Вычисляется из данных → после вычитки themes[] картинка пересоберётся сама.
   const defaultLitId = useMemo(() => {
@@ -87,16 +102,37 @@ export function WheelCanvas({
   // litId ведёт натрий (кто горит); «сильный дим» остаётся на activeId (живое внимание).
   const litId = activeId ?? defaultLitId;
 
-  // Перестройка вокруг активного рассказа (клиентский reweight, тёплый старт).
-  // Под reduced-motion — базовая укладка (без reflow).
-  const displayLayout = useMemo(() => {
-    if (reduced || !activeStorySlug) return layout;
-    return computeWheelLayout(reweight(graph, activeStorySlug), {
+  // Граф с усиленными рёбрами прочитанного — общая основа обоих слоёв укладки.
+  const memoryGraph = useMemo(
+    () => reweightRead(graph, readSet),
+    [graph, readSet],
+  );
+
+  // Память «Колеса»: начатые темы наклоняются внутрь кольца ∝ доле прочитанного, их
+  // рассказы садятся ближе — карта оседает вокруг пройденного пути (§8). Пересчёт
+  // только при смене множества. Под reduced-motion reflow нет: позиции = build-time,
+  // но след/тепло/дуги рисуются (паритет — статичный сценарий, а не «выключено»).
+  const memoryLayout = useMemo(() => {
+    if (reduced || readSet.size === 0) return layout;
+    return computeWheelLayout(memoryGraph, {
       initial: layout,
+      iterations: 200, // разовый пересчёт от тёплого старта: 44 узла, единицы мс
+      lean: readFraction,
+    });
+  }, [reduced, readSet, memoryGraph, layout, readFraction]);
+
+  // Живое внимание к рассказу — временный reweight ПОВЕРХ памяти (веса композируются,
+  // иначе на hover память «отпускалась» бы). Тёплый старт — от укладки памяти; тот же
+  // lean, иначе наклонённые темы прыгали бы обратно на кольцо при наведении.
+  const displayLayout = useMemo(() => {
+    if (reduced || !activeStorySlug) return memoryLayout;
+    return computeWheelLayout(reweight(memoryGraph, activeStorySlug), {
+      initial: memoryLayout,
       iterations: 80,
       anchor: activeStorySlug, // активный рассказ не двигается — иначе hover «убегает»
+      lean: readFraction,
     });
-  }, [reduced, activeStorySlug, graph, layout]);
+  }, [reduced, activeStorySlug, memoryGraph, memoryLayout, readFraction]);
 
   // Снять висящий таймер наведения при размонтировании.
   useEffect(
@@ -229,13 +265,14 @@ export function WheelCanvas({
         viewBox={`0 0 ${WHEEL_VIEW.width} ${WHEEL_VIEW.height}`}
         className="h-auto w-full"
       >
-        {/* рёбра */}
+        {/* рёбра: холод по умолчанию → стойкий след прочитанного → горящий путь */}
         <g>
           {graph.links.map((l, i) => {
             const a = displayLayout[l.source];
             const b = displayLayout[l.target];
             if (!a || !b) return null;
             const lit = linkLit(l.source, l.target);
+            const trace = !lit && readSet.has(l.source);
             return (
               <motion.line
                 key={i}
@@ -243,8 +280,10 @@ export function WheelCanvas({
                 animate={{ x1: a.x, y1: a.y, x2: b.x, y2: b.y }}
                 transition={spring}
                 strokeWidth={lit ? 1.5 : 1}
-                className={cn(lit ? "stroke-sodium" : "stroke-foreground")}
-                opacity={lit ? 0.85 : 0.08}
+                className={cn(
+                  lit || trace ? "stroke-sodium" : "stroke-foreground",
+                )}
+                opacity={lit ? 0.85 : trace ? 0.34 : 0.08}
               />
             );
           })}
@@ -306,9 +345,10 @@ export function WheelCanvas({
                   radius={radiusOf(node.id)}
                   degree={degree[node.id] ?? 0}
                   breathe={node.id === litId && !reduced}
+                  readFraction={readFraction[node.id] ?? 0}
                 />
               ) : (
-                <StoryNode state={state} />
+                <StoryNode state={state} read={readSet.has(node.id)} />
               )}
             </motion.g>
           );

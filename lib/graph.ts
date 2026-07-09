@@ -2,7 +2,8 @@ import type { Story, Theme, BookId } from "@/content/schema";
 
 // Данные «Колеса» (§5): граф из 10 узлов-понятий + 34 узлов-рассказов; рёбра —
 // членство «рассказ ↔ тема». Используется доступным двойником (WheelIndex, Шаг 3.1)
-// и визуальным графом d3-force (Шаг 3.2). reweight() при чтении — Шаг 3.3.
+// и визуальным графом d3-force (Шаг 3.2). Перестройка при чтении (Шаг 3.3): временная
+// на внимании — reweight(); стойкая на прочитанном — reweightRead() (§8 «память»).
 
 export type WheelNode = {
   id: string; // тема: ThemeId; рассказ: slug
@@ -15,7 +16,8 @@ export type WheelNode = {
 export type WheelLink = {
   source: string; // slug рассказа
   target: string; // id темы
-  weight: number;
+  weight: number; // жёсткость пружины (forceLink.strength)
+  distanceScale?: number; // длина покоя пружины ×; <1 — рассказ садится ближе к теме
 };
 
 export type WheelGraph = { nodes: WheelNode[]; links: WheelLink[] };
@@ -86,4 +88,57 @@ export function reweight(
       : l,
   );
   return { nodes: graph.nodes, links };
+}
+
+/** Стойкая консолидация рёбер ВСЕХ прочитанных рассказов (§8 «память Колеса»).
+ *  Отличие от reweight(): работает по множеству и держится постоянно, а не на hover.
+ *
+ *  Узел двигает `pull` (укорочение длины покоя), а не `boost`: умножить ВСЕ рёбра узла
+ *  на общий множитель — значит не сместить точку равновесия, узел лишь держится крепче
+ *  там же. Поэтому boost 1.6 и boost 8 дают один и тот же сдвиг.
+ *  boost=1.6 → forceLink.strength 0.45·1.6 = 0.72: между базой 0.45 и hover 0.9. Выше 2
+ *  брать бессмысленно — упрётся в потолок min(0.9, …) в wheelLayout и сравняется с hover.
+ *  Память — фон, живое внимание — акцент. */
+export function reweightRead(
+  graph: WheelGraph,
+  readSlugs: ReadonlySet<string>,
+  boost = 1.6,
+  pull = 0.62,
+): WheelGraph {
+  if (readSlugs.size === 0) return graph;
+  const links = graph.links.map((l) =>
+    readSlugs.has(l.source)
+      ? {
+          ...l,
+          weight: l.weight * boost,
+          distanceScale: (l.distanceScale ?? 1) * pull,
+        }
+      : l,
+  );
+  return { nodes: graph.nodes, links };
+}
+
+/** Доля прочитанных рассказов темы [0..1] — «тепло» темы (дуга прогресса, §8).
+ *  Тема без рассказов даёт 0 (как и themeDegree — достойная деградация). */
+export function readFractionByTheme(
+  graph: WheelGraph,
+  readSlugs: ReadonlySet<string>,
+): Record<string, number> {
+  const total: Record<string, number> = {};
+  const done: Record<string, number> = {};
+  for (const n of graph.nodes) {
+    if (n.kind === "theme") {
+      total[n.id] = 0;
+      done[n.id] = 0;
+    }
+  }
+  for (const l of graph.links) {
+    total[l.target] = (total[l.target] ?? 0) + 1;
+    if (readSlugs.has(l.source)) done[l.target] = (done[l.target] ?? 0) + 1;
+  }
+  const fraction: Record<string, number> = {};
+  for (const id of Object.keys(total)) {
+    fraction[id] = total[id] ? done[id] / total[id] : 0;
+  }
+  return fraction;
 }

@@ -24,6 +24,16 @@ export const WHEEL_VIEW = { width: 1000, height: 760 } as const;
 // Рассказы держим внутри кольца тем: доля от радиуса кольца (чуть внутри периметра).
 const STORY_RING_FACTOR = 0.88;
 
+// Длина покоя ребра «рассказ↔тема». Память «Колеса» укорачивает её у прочитанных
+// (WheelLink.distanceScale) — так узел реально садится ближе к своим темам.
+const LINK_DISTANCE = 90;
+
+// На сколько px тема сдвигается внутрь кольца, если прочитаны ВСЕ её рассказы (opts.lean).
+// Тема — закреплённый якорь укладки, поэтому её наклон тянет за собой её созвездие:
+// Колесо кривится в сторону прочитанного. Одних рёбер для этого мало — рассказ с
+// несколькими темами стоит в точке, где их тяги гасят друг друга.
+const THEME_LEAN = 18;
+
 type LayoutOpts = {
   width?: number;
   height?: number;
@@ -31,10 +41,16 @@ type LayoutOpts = {
   iterations?: number;
   initial?: WheelLayout; // тёплый старт: позиции рассказов из готовой укладки
   anchor?: string; // id рассказа, закреплённого на месте (не уезжает из-под курсора)
+  lean?: Record<string, number>; // тема → доля [0..1]: наклон внутрь кольца (память, §8)
 };
 
 type SimNode = SimulationNodeDatum & { id: string; kind: "theme" | "story" };
-type SimLink = { source: string; target: string; weight: number };
+type SimLink = {
+  source: string;
+  target: string;
+  weight: number;
+  distanceScale?: number;
+};
 
 /** Детерминированный LCG-источник случайности в [0, 1). */
 function lcg(seed: number): () => number {
@@ -98,11 +114,13 @@ export function computeWheelLayout(
   const nodes: SimNode[] = [
     ...themeNodes.map((t, i): SimNode => {
       const angle = (i / themeNodes.length) * 2 * Math.PI - Math.PI / 2;
+      // «начатая» тема притягивается внутрь кольца ∝ доле прочитанного (§8)
+      const r = themeRadius - THEME_LEAN * clamp(opts.lean?.[t.id] ?? 0, 0, 1);
       return {
         id: t.id,
         kind: "theme",
-        fx: cx + themeRadius * Math.cos(angle), // тема зафиксирована по кольцу
-        fy: cy + themeRadius * Math.sin(angle),
+        fx: cx + r * Math.cos(angle), // тема зафиксирована по кольцу
+        fy: cy + r * Math.sin(angle),
       };
     }),
     ...storyNodes.map((s): SimNode => {
@@ -125,6 +143,7 @@ export function computeWheelLayout(
     source: l.source,
     target: l.target,
     weight: l.weight,
+    distanceScale: l.distanceScale,
   }));
 
   const simulation = forceSimulation<SimNode, SimLink>(nodes)
@@ -133,7 +152,8 @@ export function computeWheelLayout(
       "link",
       forceLink<SimNode, SimLink>(links)
         .id((d) => d.id)
-        .distance(90)
+        // база 90 неизменна; память укорачивает длину покоя → узел садится к теме
+        .distance((l) => LINK_DISTANCE * (l.distanceScale ?? 1))
         // вес=1 → 0.45 (база неизменна); усиленные рёбра тянут сильнее (до 0.9)
         .strength((l) => Math.min(0.9, 0.45 * l.weight)),
     )

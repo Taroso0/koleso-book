@@ -10,6 +10,12 @@ const MODE_KEY = "kirilov:reading-mode";
 const PROGRESS_PREFIX = "kirilov:reading:progress:";
 const LAST_KEY = "kirilov:reading:last";
 
+/** Порог «рассказ прочитан»: доведён до конца (§8 «память Колеса»). */
+export const READ_PCT = 0.9;
+
+/** Рассказ стал прочитанным — сигнал «Колесу» в этой же вкладке (другая ловит storage). */
+export const PROGRESS_EVENT = "kirilov:reading-progress";
+
 function ls(): Storage | null {
   try {
     return typeof window !== "undefined" ? window.localStorage : null;
@@ -44,16 +50,45 @@ export type LastRead = {
   pct: number;
 };
 
+// Запись прогресса: pct — где читатель сейчас (для восстановления позиции),
+// max — насколько далеко он заходил КОГДА-ЛИБО (монотонен). Память «Колеса» стоит
+// на max: вернуться к началу рассказа не значит его «разчитать».
+type ProgressRecord = { pct?: number; max?: number; ts?: number };
+
+function readRecord(slug: string): ProgressRecord {
+  const raw = ls()?.getItem(PROGRESS_PREFIX + slug);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as ProgressRecord;
+  } catch {
+    return {};
+  }
+}
+
 /** Доля прочитанного [0..1] для рассказа (0, если не начат). */
 export function getProgress(slug: string): number {
-  const raw = ls()?.getItem(PROGRESS_PREFIX + slug);
-  if (!raw) return 0;
-  try {
-    const v = JSON.parse(raw) as { pct?: number };
-    return typeof v.pct === "number" ? v.pct : 0;
-  } catch {
-    return 0;
-  }
+  const v = readRecord(slug).pct;
+  return typeof v === "number" ? v : 0;
+}
+
+/** Максимум прочитанного за всё время [0..1]. Записи без max (до Шага 3.3) —
+ *  откат на pct, чтобы старый прогресс не потерялся. */
+export function getMaxProgress(slug: string): number {
+  const r = readRecord(slug);
+  const max = typeof r.max === "number" ? r.max : 0;
+  const pct = typeof r.pct === "number" ? r.pct : 0;
+  return Math.max(max, pct);
+}
+
+/** Рассказ дочитан до конца — узел «Колеса» обжит (§8). */
+export function isRead(slug: string): boolean {
+  return getMaxProgress(slug) >= READ_PCT;
+}
+
+/** Ключ события storage относится к прогрессу чтения? (null = localStorage.clear())
+ *  Фильтр нужен, чтобы смена темы чтения в соседней вкладке не дёргала «Колесо». */
+export function isProgressKey(key: string | null): boolean {
+  return key === null || key.startsWith(PROGRESS_PREFIX);
 }
 
 /** Сохранить позицию рассказа + указатель «последнее прочитанное». */
@@ -61,8 +96,18 @@ export function saveProgress(info: LastRead): void {
   const store = ls();
   if (!store) return;
   const pct = Math.min(1, Math.max(0, info.pct));
-  store.setItem(PROGRESS_PREFIX + info.slug, JSON.stringify({ pct, ts: Date.now() }));
+  const prevMax = getMaxProgress(info.slug);
+  const max = Math.max(prevMax, pct);
+  store.setItem(
+    PROGRESS_PREFIX + info.slug,
+    JSON.stringify({ pct, max, ts: Date.now() }),
+  );
   store.setItem(LAST_KEY, JSON.stringify({ ...info, pct }));
+  // Событие — только в момент перехода в «прочитано»: saveProgress зовут на каждом
+  // кадре скролла, а «Колесу» интересен ровно этот один переход.
+  if (prevMax < READ_PCT && max >= READ_PCT) {
+    window.dispatchEvent(new Event(PROGRESS_EVENT));
+  }
 }
 
 export function getLastRead(): LastRead | null {
