@@ -22,10 +22,11 @@ import { useReadStories } from "./readStories";
 // кругами при небыстром движении не захватывали их.
 const HOVER_DWELL_MS = 200;
 
-// Радиус узла-темы ∝ степени (число рассказов): крупные звёзды и мелкие. Клэмп держит
-// «Человек» (макс.) в узде, а тему с 0 рёбер — видимой (r=6, достойная деградация).
+// Радиус узла-темы: ПЛОЩАДЬ ∝ степени — √-шкала, честные «чернила» (Шаг 3.4).
+// Линейный кламп схлопывал вершину («Человек» 22 и «Душа» 17 выходили почти равными);
+// √ разводит её (20.2 против 17.7), а пол 5.5 держит тему с 0 рёбер видимой.
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const radiusForDegree = (degree: number) => clamp(6 + degree * 0.7, 6, 20);
+const radiusForDegree = (degree: number) => clamp(4.3 * Math.sqrt(degree), 5.5, 23);
 
 // Визуальный граф «Колеса» (§5/§8). Базовые позиции — предрасчёт на сборке (проп
 // layout). Два слоя перестройки: СТОЙКИЙ — память о прочитанном (reweightRead,
@@ -101,6 +102,11 @@ export function WheelCanvas({
   // Покой больше не пустой: без внимания горит defaultLit; внимание переносит огонь.
   // litId ведёт натрий (кто горит); «сильный дим» остаётся на activeId (живое внимание).
   const litId = activeId ?? defaultLitId;
+
+  // Покой против внимания (Шаг 3.4): в покое горящая тема — лампа, не прожектор.
+  // Веер litId тлеет (рёбра 0.4, пыль sodium-deep); полный огонь — только под живым
+  // вниманием (hover/фокус). Кольцо/подпись/счётчик лампы не приглушаются.
+  const live = activeId != null;
 
   // Граф с усиленными рёбрами прочитанного — общая основа обоих слоёв укладки.
   const memoryGraph = useMemo(
@@ -265,7 +271,9 @@ export function WheelCanvas({
         viewBox={`0 0 ${WHEEL_VIEW.width} ${WHEEL_VIEW.height}`}
         className="h-auto w-full"
       >
-        {/* рёбра: холод по умолчанию → стойкий след прочитанного → горящий путь */}
+        {/* рёбра: холод → след прочитанного → тление (покой) → огонь (внимание).
+            Тление 0.4 и след 0.34 близки намеренно: покой выглядит «обжитым»,
+            но горящий путь чуть теплее следа. */}
         <g>
           {graph.links.map((l, i) => {
             const a = displayLayout[l.source];
@@ -279,11 +287,12 @@ export function WheelCanvas({
                 initial={false}
                 animate={{ x1: a.x, y1: a.y, x2: b.x, y2: b.y }}
                 transition={spring}
-                strokeWidth={lit ? 1.5 : 1}
+                strokeWidth={lit ? (live ? 1.5 : 1.1) : 1}
                 className={cn(
+                  "wheel-link",
                   lit || trace ? "stroke-sodium" : "stroke-foreground",
                 )}
-                opacity={lit ? 0.85 : trace ? 0.34 : 0.08}
+                opacity={lit ? (live ? 0.9 : 0.4) : trace ? 0.34 : 0.11}
               />
             );
           })}
@@ -348,7 +357,11 @@ export function WheelCanvas({
                   readFraction={readFraction[node.id] ?? 0}
                 />
               ) : (
-                <StoryNode state={state} read={readSet.has(node.id)} />
+                <StoryNode
+                  state={state}
+                  read={readSet.has(node.id)}
+                  live={live}
+                />
               )}
             </motion.g>
           );
