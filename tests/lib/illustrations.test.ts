@@ -39,7 +39,7 @@ describe("getIllustration", () => {
   });
 
   it("artist берётся из book", () => {
-    const [id] = firstKey.split("/") as [BookId];
+    const id = firstKey.split("/")[0] as BookId;
     const book: Book = { id, title: "Кн", year: 2022, stories: [], artist: "Художник" };
     expect(getIllustration(storyFrom(firstKey), book)?.artist).toBe("Художник");
   });

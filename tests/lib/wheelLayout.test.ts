@@ -75,6 +75,12 @@ describe("computeWheelLayout", () => {
     expect(layout.a.y).toBeCloseTo(360);
   });
 
+  it("узел, стартующий далеко за кольцом, клампится внутрь (финальный радиальный клэмп)", () => {
+    const layout = computeWheelLayout(graph, { initial: { a: { x: 5, y: 5 } }, iterations: 0 });
+    const r = Math.hypot(layout.a.x - cx, layout.a.y - cy);
+    expect(r).toBeLessThanOrEqual(maxR + 0.001);
+  });
+
   it("lean вне [0,1] клампится (узлы валидны, не бросает)", () => {
     const layout = computeWheelLayout(graph, { lean: { soul: 5, death: -3 } });
     expect(Number.isFinite(layout.soul.x)).toBe(true);
