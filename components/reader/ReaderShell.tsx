@@ -119,8 +119,13 @@ export function ReaderShell({
     const pct = getProgress(slug);
     if (mode === "paged") {
       if (!measured) return;
-      setPage(pageCount > 1 ? Math.round(pct * (pageCount - 1)) : 0);
-      restoredRef.current = true;
+      // Отложенный setState (rAF, как в ветке scroll ниже): восстановление позиции —
+      // после коммита раскладки, без синхронного каскадного ре-рендера в теле effect.
+      const id = requestAnimationFrame(() => {
+        setPage(pageCount > 1 ? Math.round(pct * (pageCount - 1)) : 0);
+        restoredRef.current = true;
+      });
+      return () => cancelAnimationFrame(id);
     } else {
       const id = requestAnimationFrame(() => {
         const max =

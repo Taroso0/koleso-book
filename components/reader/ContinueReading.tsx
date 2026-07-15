@@ -1,17 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getLastRead, type LastRead } from "./reading";
+import { useHydrated } from "@/components/motion/useHydrated";
+import { getLastRead } from "./reading";
 
 // «Продолжить чтение» (Шаг 2.3): ссылка на последний открытый рассказ + прогресс.
-// Рендерится только после монтирования (данные из localStorage) — без SSR-расхождения.
+// Рендерится только после гидратации (данные из localStorage) — без SSR-расхождения.
 export function ContinueReading() {
-  const [last, setLast] = useState<LastRead | null>(null);
-
-  useEffect(() => {
-    setLast(getLastRead());
-  }, []);
+  const hydrated = useHydrated();
+  const last = hydrated ? getLastRead() : null;
 
   if (!last) return null;
   const percent = Math.round(last.pct * 100);

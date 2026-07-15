@@ -34,7 +34,9 @@ export function StoryOpening({ text, slug, variant, className, onDone }: StoryOp
   const reduced = useReducedMotionSafe();
   const ref = useRef<HTMLParagraphElement>(null);
   const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   const v: OpeningVariant = variant ?? (slug ? openingVariant(slug) : "rise");
   const kinetic = !reduced && v !== "glitch";

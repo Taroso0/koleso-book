@@ -17,14 +17,14 @@ npx eslint app components lib content
 ```
 **Не `npm run lint`** — он захватывает сгенерированный `ds-bundle/` (~1850 проблем шума).
 
-Известный baseline — ровно эти 8 ошибок (известный долг: не чинить мимоходом, не маскировать, новых не добавлять):
-- `components/wheel/WheelCanvas.tsx:133, 141` — react-hooks/preserve-manual-memoization
-- `components/haunted/useHauntedCapability.ts:19` — react-hooks/set-state-in-effect
-- `components/motion/MotionProvider.tsx:23` — react-hooks/set-state-in-effect
-- `components/reader/ContinueReading.tsx:13` — react-hooks/set-state-in-effect
-- `components/reader/ReaderShell.tsx:122` — react-hooks/set-state-in-effect
-- `components/haunted/GlitchText.tsx:27` — react-hooks/refs
-- `components/haunted/StoryOpening.tsx:37` — react-hooks/refs
+Известный baseline — ровно эти 2 ошибки (известный долг: не чинить мимоходом, не маскировать, новых не добавлять):
+- `components/wheel/WheelCanvas.tsx:135, 143` — react-hooks/preserve-manual-memoization
+
+Это НЕ рантайм-баг: ручной `useMemo` продолжает работать, React Compiler лишь
+отказывается оптимизировать компонент (не может доказать, что граф не мутируется).
+Честное исправление требует правок в графе «Колеса» (рисковые рельсы) — отдельная
+осознанная задача. Прежние 6 ошибок (react-hooks/refs, react-hooks/set-state-in-effect)
+исправлены.
 
 **Провал шага = любая ошибка сверх этого списка.** Если строка известной ошибки сдвинулась из-за правок в том же файле — сверяй по файлу и правилу, не по номеру строки.
 

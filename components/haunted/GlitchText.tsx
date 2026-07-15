@@ -24,7 +24,9 @@ export function GlitchText({ text, className, play = true, onDone }: GlitchTextP
   const reduced = useReducedMotionSafe();
   const active = play && !reduced;
   const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   useEffect(() => {
     if (!active) {
