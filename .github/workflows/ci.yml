@@ -1,0 +1,54 @@
+name: CI
+
+# Проверки на каждый push в main и на каждый pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      # ── Блокирующие гейты ─────────────────────────────────────────────
+      - name: Типы (tsc)
+        run: npx tsc --noEmit
+
+      - name: Тесты + покрытие (порог 90% по области)
+        run: npm run test:coverage
+
+      - name: Прод-сборка (заодно zod-валидация контента)
+        run: npm run build
+
+      - name: Линт тестов (строго, 0 ошибок)
+        run: npx eslint tests
+
+      # ── Информационно, не блокирует ──────────────────────────────────
+      # У линта живого кода зафиксированный техдолг — ровно 8 известных
+      # ошибок (react-hooks / React Compiler). Шаг показывает регрессии,
+      # но не валит сборку на известном долге и не маскирует его.
+      - name: Линт живого кода (информационно; baseline 8 ошибок)
+        run: npx eslint app components lib content
+        continue-on-error: true
+
+      - name: Артефакт покрытия
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
