@@ -16,7 +16,9 @@ import { useZachin } from "@/components/haunted/zachinContext";
 import { cn } from "@/lib/utils";
 import { ThemeNode, type NodeState } from "./ThemeNode";
 import { StoryNode } from "./StoryNode";
+import { AnchorPlate, ANCHOR_PLATE_H } from "./AnchorPlate";
 import { useReadStories } from "./readStories";
+import { resolvedWheelAnchors } from "@/lib/anchors";
 
 // Задержка «подержать» перед подсветкой узла — чтобы случайные пролёты мыши над
 // кругами при небыстром движении не захватывали их.
@@ -367,6 +369,52 @@ export function WheelCanvas({
           );
         })}
       </svg>
+
+      {/* Слой якорей-иллюстраций (§8, §14): декоративные плашки у 2–3 узлов-тем —
+          карта смыслов получает «плоть». Живёт ВНУТРИ WheelCanvas (а не отдельным
+          сиблингом): красится теми же состояниями, что и узлы (nodeState/activeId/live),
+          позиционируется процентами поверх SVG — как карточка-превью ниже. Не трогает
+          укладку/вес/память/клавиатуру; pointer-events:none → hit-зона у узла. */}
+      {resolvedWheelAnchors.map((t) => {
+        const p = displayLayout[t.theme];
+        const node = graph.nodes.find(
+          (n) => n.id === t.theme && n.kind === "theme",
+        );
+        if (!p || !node) return null;
+        const deg = degree[t.theme] ?? 0;
+        const r = radiusOf(t.theme);
+        // кегль подписи — та же формула, что в ThemeNode (√-шкала)
+        const size = Math.min(19.5, 8.5 + 2.3 * Math.sqrt(deg));
+        // ширину подписи меряет прототип через getBBox; на рендере его нет — оцениваем
+        const labelW = node.label.length * size * 0.55;
+        // снаружи кольца, за концом подписи: r+8 (старт подписи) + ширина + воздух + полплашки
+        const away = r + 8 + labelW + 18 + ANCHOR_PLATE_H * 0.42;
+        // сдвиг по радиали — уводит плашку с горизонтали подписи (не накрывать соседей)
+        const ang = Math.atan2(
+          p.y - WHEEL_VIEW.height / 2,
+          p.x - WHEEL_VIEW.width / 2,
+        );
+        const ox = themeSide(t.theme) === "start" ? away : -away;
+        const oy = Math.sin(ang) * (ANCHOR_PLATE_H * 0.5 + 14);
+        const fx = p.x + ox + (t.nudge?.x ?? 0);
+        const fy = p.y + oy + (t.nudge?.y ?? 0);
+        const state = nodeState(t.theme);
+        const lit = state === "active" || state === "highlight"; // как ThemeNode
+        const dimmed = activeId != null && state === "dim"; // как opacity-25 узла
+        return (
+          <AnchorPlate
+            key={t.theme}
+            src={t.src}
+            width={t.width}
+            height={t.height}
+            left={`${(fx / WHEEL_VIEW.width) * 100}%`}
+            top={`${(fy / WHEEL_VIEW.height) * 100}%`}
+            lit={lit}
+            dimmed={dimmed}
+            lift={lit && live && !reduced} // подъём только под живым вниманием
+          />
+        );
+      })}
 
       {/* превью наведённого рассказа: заголовок + firstLine */}
       {previewNode && previewPos && (

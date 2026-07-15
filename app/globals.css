@@ -799,6 +799,57 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
   );
 }
 
+/* ════════ Якоря-иллюстрации на «Колесе» (§8, §14) ════════
+   Декоративный слой ПОВЕРХ графа: 2–3 плашки Кучеренко у узлов-тем дают карте «плоть».
+   HTML-оверлей над SVG (как карточка-превью), позицию/состояние считает WheelCanvas.
+   Поведение (§10): тиха в покое (0.62), полная плотность когда тема горит, глушится
+   вместе с узлом (0.3); лёгкий подъём — только под живым вниманием и no-preference
+   (движется только сверхъестественное). Не интерактивна: pointer-events:none — hit-зона
+   остаётся у узла. Палитру иллюстрации не перекрашиваем — якорь единственный «инородный»
+   цвет на карте, осознанно; паспарту «карточка» держит чужой тон. */
+.wheel-anchor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  opacity: var(--anchor-rest, 0.62); /* тишина в покое */
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+.wheel-anchor.is-lit {
+  opacity: 1;
+} /* тема горит (defaultLit в покое ИЛИ hover/focus) */
+.wheel-anchor.is-dim {
+  opacity: 0.3;
+} /* внимание на другом — глушится вместе с узлом */
+.wheel-anchor__mat {
+  position: relative;
+  padding: 8px; /* паспарту */
+  background: var(--card); /* «карточка» (в .dark — тёмная институциональная) */
+  border: 1px solid var(--border);
+  box-shadow: 0 14px 36px -18px oklch(0 0 0 / 0.6);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* зерно паспарту — как в Шаге 2 (feTurbulence, overlay), «бумажная» материя плашки */
+.wheel-anchor__mat::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.2;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wheel-anchor img {
+  display: block;
+  border: 1px solid oklch(1 0 0 / 0.14); /* тонкая рамка изображения (язык IllustrationPlate) */
+}
+/* подъём под живым вниманием — только no-preference (в JS дополнительно gated !reduced,
+   чтобы ловить и ручной тумблер kirilov:reduce-effects) — паритет, а не «выключено» */
+@media (prefers-reduced-motion: no-preference) {
+  .wheel-anchor.is-lift .wheel-anchor__mat {
+    transform: translateY(-5px) scale(1.035);
+  }
+}
+
 /* ════════ §6: голос системных состояний (лоадер · 404 · пусто) ════════
    Дуальный регистр §5: машина = моно, душа = сериф. Лоадер и 404 — тёмная сцена
    «офис ночью»: контейнеры несут класс .dark (в репо :root светлый), поэтому
