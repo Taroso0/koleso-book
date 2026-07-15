@@ -132,15 +132,28 @@ export function WheelCanvas({
   // Живое внимание к рассказу — временный reweight ПОВЕРХ памяти (веса композируются,
   // иначе на hover память «отпускалась» бы). Тёплый старт — от укладки памяти; тот же
   // lean, иначе наклонённые темы прыгали бы обратно на кольцо при наведении.
-  const displayLayout = useMemo(() => {
-    if (reduced || !activeStorySlug) return memoryLayout;
-    return computeWheelLayout(reweight(memoryGraph, activeStorySlug), {
-      initial: memoryLayout,
-      iterations: 80,
-      anchor: activeStorySlug, // активный рассказ не двигается — иначе hover «убегает»
-      lean: readFraction,
-    });
-  }, [reduced, activeStorySlug, memoryGraph, memoryLayout, readFraction]);
+  // displayLayout НЕ мемоизируем вручную — отдаём React Compiler (включён в
+  // next.config). Ручной useMemo здесь он сохранить не может: computeWheelLayout
+  // «мутирует» результат reweight(...), а компилятор консервативно считает, что
+  // тот алиасит аргументы reweight, — область их зависимостей растягивается через
+  // границу useMemo. Плоский const такой границы не создаёт: компилятор мемоизирует
+  // его сам по тем же реактивным входам. «Граф внимания» строим от исходного графа
+  // (проп заморожен) + readSet, а НЕ от memoized memoryGraph, — тогда memoryGraph и
+  // дорогая укладка памяти memoryLayout (200 итераций) остаются в своих областях и
+  // НЕ пересчитываются на hover. Значение идентично reweight(memoryGraph, …):
+  // reweightRead чист и детерминирован.
+  const displayLayout =
+    reduced || !activeStorySlug
+      ? memoryLayout
+      : computeWheelLayout(
+          reweight(reweightRead(graph, readSet), activeStorySlug),
+          {
+            initial: memoryLayout,
+            iterations: 80,
+            anchor: activeStorySlug, // активный рассказ не двигается — иначе hover «убегает»
+            lean: readFraction,
+          },
+        );
 
   // Снять висящий таймер наведения при размонтировании.
   useEffect(

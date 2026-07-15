@@ -56,13 +56,11 @@ python scripts/illustrations_manifest.py  # размеры плашек → cont
 Артефакты пайплайна детерминированы и коммитятся.
 
 ## Проверка изменений (baseline)
-`npx eslint app components lib content` сейчас даёт **ровно 2 известные ошибки** —
-это зафиксированный техдолг (React Compiler / preserve-manual-memoization в
-`WheelCanvas`), его не чинить мимоходом и не маскировать; список — в навыке
-`/verify`. Провал линта = любая ошибка сверх этих двух. (Прежние 6 ошибок группы
-react-hooks — refs и set-state-in-effect — исправлены.) Починка остатка baseline
-и добавление ignores для `ds-bundle/` в `eslint.config.mjs` — отдельная осознанная
-задача.
+`npx eslint app components lib content` сейчас даёт **0 ошибок** — весь прежний
+техдолг группы react-hooks (refs, set-state-in-effect, preserve-manual-memoization
+в `WheelCanvas`) исправлен. Провал линта = любая ошибка; вернувшаяся `react-hooks/*`
+— регресс, не «известная». Отдельная (не связанная) осознанная задача — добавить
+ignores для `ds-bundle/` в `eslint.config.mjs`, чтобы `npm run lint` не тонул в шуме.
 
 ## Архитектура
 Алиас импорта: `@/*` → корень репозитория.
