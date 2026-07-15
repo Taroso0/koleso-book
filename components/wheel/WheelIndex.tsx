@@ -49,7 +49,7 @@ export function WheelIndex({ graph }: { graph: WheelGraph }) {
       <div className="space-y-1">
         {groups.map(({ theme, stories }) => (
           <section key={theme.id} aria-labelledby={`theme-${theme.id}`}>
-            <details className="group border-b border-border">
+            <details className="wheel-disclosure group border-b border-border">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-2 py-3 [&::-webkit-details-marker]:hidden">
                 <h3
                   id={`theme-${theme.id}`}

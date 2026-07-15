@@ -775,6 +775,34 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
     stroke-width 0.35s;
 }
 
+/* ════════ Разворачивание списков доступного «Колеса» (§5, WheelIndex) ════════
+   Нативный <details> открывается рывком. Прогрессивное улучшение через
+   ::details-content + interpolate-size: где браузер поддерживает (совр. Chromium) —
+   список плавно разворачивается по высоте; где нет — мгновенно (нативно), без
+   поломок. Паритет reduced-motion: под ОС-настройкой (media) ИЛИ ручным тумблером
+   «снизить эффекты» (:root[data-reduce-effects] ставит MotionProvider) раскрытие
+   резкое. Чистый CSS — WheelIndex остаётся серверным, без JS. */
+@media (prefers-reduced-motion: no-preference) {
+  .wheel-disclosure {
+    interpolate-size: allow-keywords; /* включает переход высоты high↔auto */
+  }
+  .wheel-disclosure::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 0.26s cubic-bezier(0.2, 0.7, 0.2, 1),
+      content-visibility 0.26s allow-discrete; /* держит контент видимым при сворачивании */
+  }
+  .wheel-disclosure[open]::details-content {
+    block-size: auto;
+  }
+}
+/* ручной тумблер «снизить эффекты» — раскрытие и поворот шеврона резкие (паритет с ОС) */
+:root[data-reduce-effects] .wheel-disclosure::details-content,
+:root[data-reduce-effects] .wheel-disclosure summary svg {
+  transition: none;
+}
+
 /* ════════ Ночь созвездия → рассвет → бумага (§4 «свет как событие») ════════
    Граф Шага 3 рисовался под тёмный фон (натрий, светлые подписи). Здесь desktop-граф
    получает ночную панель (.dark в разметке флипает --foreground светлым), а ниже —

@@ -23,6 +23,13 @@ export function MotionProvider({ children }: { children: React.ReactNode }) {
     if (localStorage.getItem(STORAGE_KEY) === "1") setReduceEffectsState(true);
   }, []);
 
+  // Мостик ручного тумблера в CSS: чистые CSS-эффекты (напр. разворачивание
+  // списков «Колеса») гейтятся через :root[data-reduce-effects]. ОС-настройку
+  // они ловят сами через @media prefers-reduced-motion; здесь — ручной тумблер.
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-reduce-effects", reduceEffects);
+  }, [reduceEffects]);
+
   const setReduceEffects = (v: boolean) => {
     setReduceEffectsState(v);
     localStorage.setItem(STORAGE_KEY, v ? "1" : "0");
