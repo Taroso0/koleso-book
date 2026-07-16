@@ -706,11 +706,14 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
   }
 }
 
-/* Подпись «начатой» темы теплеет — сдвиг --foreground к натрию (§8 «память Колеса»).
-   Классом, а не арбитрарной утилитой: color-mix в имени класса ломок. Светлее, чем
-   --muted-foreground (6.2:1 по аудиту 6.1) → контраст AA только растёт. */
+/* Подпись «начатой» темы теплеет — сдвиг --muted-foreground к остывшему натрию
+   (§8 «память Колеса»). Классом, а не арбитрарной утилитой: color-mix в имени
+   класса ломок. Тёплая ≠ горящая: сдвиг от muted (не от foreground) и к
+   sodium-deep (не к sodium) — иначе на пикселе неотличимо от лит-состояния
+   (ревью, июль 2026). Контраст остаётся выше muted-базы (sodium-deep 5.9:1 на
+   ночи, аудит 6.1) — AA цел. */
 .wheel-label-warm {
-  fill: color-mix(in oklab, var(--foreground) 72%, var(--sodium));
+  fill: color-mix(in oklab, var(--muted-foreground) 55%, var(--sodium-deep));
 }
 
 /* Рёбра «Колеса»: значения (холод 0.11 · след 0.34 · тление 0.4 · огонь 0.9) задают
@@ -795,10 +798,31 @@ svg[data-live="true"] .wheel-story-dot {
    статичны (под prefers-reduced-motion делать нечего). --night scoped в .warm-hero,
    поэтому здесь литералом (совпадает с ним → шва сверху нет). */
 .wheel-night {
+  position: relative; /* контейнер для ::before-зерна (паттерн .paper-surface) */
   background: oklch(0.185 0.014 256); /* = --night героя, литерал (переменная scoped в .warm-hero) */
   padding: clamp(24px, 4vw, 56px) 0; /* горизонталь — у внутреннего контейнера; ночь full-bleed */
   border-radius: 0; /* ночь — не карточка; гасит унаследованное скругление (светлые нотчи в углах) */
   margin-top: -1px; /* 1px-перекрытие hero: субпиксельный transform Lenis не оставит белой нити */
+}
+/* Зерно ночной панели (§4 «материя», ревью июль 2026) — то же SVG-зерно, что у
+   бумаги (.paper-surface::before), но тише: ночь не читает, а видит боковым
+   зрением. z-index:1 у прямого потомка (граф) держит зерно строго под ним —
+   не перекрывает превью-карточку узла и не мешает ротору (граф просто рисуется
+   поверх, зерно статично и не участвует в перерисовке). */
+.wheel-night::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  mix-blend-mode: soft-light;
+  opacity: 0.25;
+}
+.wheel-night > * {
+  position: relative;
+  z-index: 1;
 }
 .dawn-strip {
   height: 220px;
