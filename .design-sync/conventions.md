@@ -18,7 +18,8 @@ CSS-переменные — **используйте их для собстве
   --secondary --muted --accent --destructive --border --input --ring`
   (у каждого цвета есть парный `*-foreground`, где применимо).
 - **Бренд-семантика:** `--sodium` (натриевый оранжевый — «магия»/фокус),
-  `--paper` (документ/архив), `--concrete` (поверхности), `--monitor` (свечение монитора).
+  `--sodium-deep` (остывший накал — «обжитое»/прочитанное), `--paper` (документ/архив),
+  `--concrete` (поверхности), `--monitor` (свечение монитора).
 - **Типографика:** `--font-system` (Inter — UI/«машина»), `--font-prose`
   (Source Serif 4 — проза/«душа»), `--font-mono-accent` (JetBrains Mono). Все с кириллицей.
 - **Скругление:** токен `--radius` (+ `--radius-md`); утилиты `rounded-sm/-md/-lg`.
@@ -34,7 +35,7 @@ CSS-переменные — **используйте их для собстве
 - Компоненты: `components/<группа>/<Имя>/<Имя>.prompt.md` и `<Имя>.d.ts` — контракт и примеры
   каждого. Группы: `general` (Button, EmptyState), `workshop` (KindBadge, WorkshopCard),
   `reader` (ProseBody, IllustrationPlate), `haunted` (GlitchText, StoryOpening, SystemLoader,
-  StaticGrain, FogReveal), `motion` (Reveal, AccentLine), `wheel` (WheelIndex),
+  StaticGrain, FogReveal), `motion` (Reveal, AccentLine), `wheel` (WheelIndex, AnchorPlate),
   `vitrina` (NotFoundScene, WarmWindowHero).
 - Язык бренда: `guidelines/docs/концепция.md`.
 
@@ -57,7 +58,13 @@ CSS-переменные — **используйте их для собстве
 - **WorkshopCard / IllustrationPlate / WheelIndex** — редакционные, данные передаются пропом:
   `WorkshopCard entry={…}`, `IllustrationPlate illustration={…}`, `WheelIndex graph={{nodes,links}}`
   (структуры — в `.d.ts`). В бандле `next/link` → нативный `<a>`, `next/image` → `<img>`: ссылки и
-  картинки — обычные элементы, задавайте реальные `href`/`src`.
+  картинки — обычные элементы, задавайте реальные `href`/`src`. Темы в `WheelIndex` свёрнуты
+  (нативный `<details>`) — раскрытие по клику работает без JS.
+- **AnchorPlate** — декоративная плашка-якорь на тёмной карте: паспарту-«карточка» с зерном +
+  изображение в родной палитре. Абсолютное позиционирование от центра — кладите в родителя с
+  `position: relative` и задавайте `left`/`top` в процентах. Пропы: `src`, `width`, `height`
+  (интринсик — задаёт пропорцию, высота плашки 84px), `lit`/`dimmed`/`lift` (полная плотность ·
+  приглушена 0.3 · подъём). Не интерактивна (pointer-events: none).
 
 ## Состояния системы — API
 Три готовые сцены «одержимой системы». Каждая несёт свой фон и тему сама (`SystemLoader` и
@@ -84,10 +91,9 @@ CSS-переменные — **используйте их для собстве
   состояние, а не «выключено».
 
 ## Первый экран — API
-- **WarmWindowHero** — готовый герой «Витрины»: ночная громада здания, одно тёплое окно и тизер
-  «Колеса» на стене. Несёт единственный `<h1>` страницы и `dark`, ставится full-bleed.
-  `degrees: Record<string, number>` — id темы → число рассказов: задаёт вес орбиты и выбирает тему,
-  к которой тянется горящий путь.
+- **WarmWindowHero** — готовый герой «Витрины»: ночная громада здания, одно тёплое окно и
+  логотип-трафарет «Наблюдатель» на стене (виден при ширине > 900px). Несёт единственный `<h1>`
+  страницы и `dark`, ставится full-bleed. Пропов нет — сцена самодостаточна.
 
 ## Пример
 ```tsx

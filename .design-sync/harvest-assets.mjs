@@ -228,6 +228,27 @@ css = css.replace(/(--(?:tw|default)-[A-Za-z0-9-]+\s*:\s*[^;{}]+)(?=[;}])/g, (_m
 // 4. url(../media/…) → url(./fonts/…)
 css = css.replace(/url\((['"]?)\.\.\/media\//g, "url($1./fonts/");
 
+// 4б. Инлайн public-ассетов: url("/img/…") → data-URI из public/. Абсолютные пути
+//     приложения в DS-проекте не резолвятся (нет статики Next) — без инлайна маска
+//     логотипа-трафарета героя (.hero-logo .stencil) молча ломается во ВСЕХ дизайнах.
+let inlinedPublic = 0;
+css = css.replace(/url\((['"]?)(\/img\/[^'")]+)\1\)/g, (m, _q, urlPath) => {
+  const file = path.join(repo, "public", urlPath);
+  const mime = {
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".avif": "image/avif",
+  }[path.extname(file).toLowerCase()];
+  if (!mime || !fs.existsSync(file)) {
+    throw new Error(`public-ассет из CSS не инлайнится: ${urlPath} (${file})`);
+  }
+  inlinedPublic++;
+  return `url("data:${mime};base64,${fs.readFileSync(file).toString("base64")}")`;
+});
+
 // 5. Допишем промоут-блок в конец (перебивает определения на хэш-классах).
 if (promoted.length) css += `\n:root{${promoted.join(";")}}\n`;
 
@@ -249,5 +270,5 @@ console.log(
     `${strippedWhereDecls} :where() decl; ` +
     `variant-rewrote ${variantRewrites} rule (drop ${ringColorDropped} ring-color decl); ` +
     `kind-tagged ${kindTagged} --tw-/--default- var; ` +
-    `woff2 ${n}`
+    `inlined ${inlinedPublic} public img; woff2 ${n}`
 );

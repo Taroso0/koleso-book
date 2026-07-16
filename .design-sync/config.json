@@ -20,8 +20,12 @@
     "WorkshopCard": "components/workshop/WorkshopCard.tsx",
     "IllustrationPlate": "components/reader/IllustrationPlate.tsx",
     "WheelIndex": "components/wheel/WheelIndex.tsx",
+    "AnchorPlate": "components/wheel/AnchorPlate.tsx",
     "NotFoundScene": "components/vitrina/NotFoundScene.tsx",
     "WarmWindowHero": "components/vitrina/WarmWindowHero.tsx"
+  },
+  "overrides": {
+    "WarmWindowHero": { "cardMode": "single", "viewport": "1280x800" }
   },
   "guidelinesGlob": ["docs/концепция.md"],
   "readmeHeader": ".design-sync/conventions.md",
@@ -41,7 +45,8 @@
     "Reveal": "/** Что проявляем при входе в кадр. */\nchildren?: React.ReactNode;\nclassName?: string;\n/** Начальный сдвиг вниз, px (по умолчанию 14). */\ny?: number;\n/** Если задан — стаггер прямых детей, сек (напр. 0.06). */\nstagger?: number;\n/** ScrollTrigger start (по умолчанию \"top 85%\"). */\nstart?: string;\n/** Проявить один раз и не прятать обратно (по умолчанию true). */\nonce?: boolean;",
     "FogReveal": "/** Что проявляем «из тумана». */\nchildren?: React.ReactNode;\nclassName?: string;\n/** Стартовое размытие, px (по умолчанию 22). */\nblur?: number;\n/** ScrollTrigger start (по умолчанию \"top 80%\"). */\nstart?: string;",
     "AccentLine": "className?: string;\n/** ScrollTrigger start (по умолчанию \"top 85%\"). */\nstart?: string;",
-    "WarmWindowHero": "/** Степень каждой темы «Колеса» (id темы → число рассказов): задаёт вес орбиты и горящий путь. */\ndegrees: Record<string, number>;"
+    "WarmWindowHero": "// Пропов нет: сцена самодостаточна (единственный h1, .dark, логотип-трафарет «Наблюдатель»).",
+    "AnchorPlate": "/** Источник изображения (обычный <img> в бандле — реальный src или data-URI). */\nsrc: string;\n/** Интринсик-размеры изображения — задают пропорцию плашки (высота фикс. 84px). */\nwidth: number;\nheight: number;\n/** Позиция центра плашки в процентах родителя с position:relative (transform -50%,-50%). */\nleft: string;\ntop: string;\n/** Тема горит — полная плотность (иначе покой 0.62). */\nlit: boolean;\n/** Внимание на другом узле — глушится до 0.3. */\ndimmed: boolean;\n/** Лёгкий подъём паспарту под живым вниманием (только при no-preference). */\nlift: boolean;"
   },
   "projectId": "e0f3243c-8da7-432f-82c9-fabc7c616e25"
 }

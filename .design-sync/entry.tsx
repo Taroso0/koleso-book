@@ -16,5 +16,6 @@ export { AccentLine } from "@/components/motion/AccentLine";
 export { WorkshopCard } from "@/components/workshop/WorkshopCard";
 export { IllustrationPlate } from "@/components/reader/IllustrationPlate";
 export { WheelIndex } from "@/components/wheel/WheelIndex";
+export { AnchorPlate, ANCHOR_PLATE_H } from "@/components/wheel/AnchorPlate";
 export { NotFoundScene } from "@/components/vitrina/NotFoundScene";
 export { WarmWindowHero } from "@/components/vitrina/WarmWindowHero";

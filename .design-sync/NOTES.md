@@ -9,7 +9,7 @@
   `--entry ./.design-sync/entry.tsx` (реэкспортирует компоненты из `components/*`).
 - Глобал бандла нормализуется в **`window.Kirilov`** (с заглавной).
 
-## Что синхронизируется (16 компонентов)
+## Что синхронизируется (17 компонентов)
 
 Группа в DS = папка-источник под `components/` (`ui/` конвертер кладёт в `general`):
 - **general**: `Button` (`components/ui/button.tsx`) — Radix Slot; `EmptyState`.
@@ -19,7 +19,9 @@
   `useReducedMotionSafe` падает в ОС-фолбэк без `<MotionProvider>`); `SystemLoader`, `StaticGrain`
   (оба чистые, без JS); `FogReveal`.
 - **motion**: `Reveal`, `AccentLine` (gsap/ScrollTrigger; провайдеро-безопасны).
-- **wheel**: `WheelIndex`.
+- **wheel**: `WheelIndex`; `AnchorPlate` (плашка-якорь §8 — презентационная, но самодостаточный
+  HTML (паспарту+`<img>`), в отличие от голых SVG-фрагментов ThemeNode/StoryNode; превью кладёт
+  её в relative-контейнер, три состояния rest/lit/dim).
 - **vitrina**: `NotFoundScene`, `WarmWindowHero` (герой тянет `HeroZachin` → `next/dynamic`, см. шимы).
 
 **НЕ синхронизируемо** (осознанно вне синка — не рендерятся изолированно/достоверно):
@@ -57,8 +59,9 @@ process is not defined`** (несколько `process.env.__NEXT_*` без `typ
 он искалечит (символ перед `//` — кавычка, не `:`) → `JSON.parse` бросает → плагин возвращает `null` →
 paths НЕ применяются → esbuild берёт esbuild-автоподхват корневого `tsconfig.json` (только `@/*`,
 без `next/*`) → реальные next/link/image в бандле → крах. **`tsconfig.bundle.json` держать чистым
-JSON, без комментариев ни в каком виде.** (Признак, что шим НЕ сработал: bundle ~1MB и `process.env.__NEXT_*`
-в `_ds_bundle.js`; со шимом ~742KB.)
+JSON, без комментариев ни в каком виде.** (Признак, что шим НЕ сработал — `process.env.__NEXT_*`
+в `_ds_bundle.js`; размер больше НЕ индикатор: после Шага 6 бандл со шимом вырос до ~997KB,
+проверять грепом по `__NEXT_`, а не по килобайтам.)
 
 esbuild JSX-режим берётся из АВТОПОДХВАТА корневого `tsconfig.json` (`jsx: react-jsx`), а не из
 `cfg.tsconfig` (тот идёт только в pathsPlugin) — имя `tsconfig.bundle.json` специально не `tsconfig.json`.
@@ -76,6 +79,12 @@ esbuild JSX-режим берётся из АВТОПОДХВАТА корнев
   3. переписывает `url(../media/…)` → `url(./fonts/…)`, копирует woff2 в `.design-sync/assets/fonts/`.
 - `cfg.cssEntry` → `.design-sync/assets/styles.css` (весь скомпилированный CSS приложения —
   суперсет: вкл. reading-темы и lenis; намеренно, несёт полный набор токенов light/dark).
+- **Шаг 4б харвеста: public-ассеты из CSS инлайнятся data-URI.** `url("/img/…")` в
+  скомпилированном CSS (сейчас — только маска логотипа-трафарета героя,
+  `public/img/logo-nablyudatel.png`, ~141KB → ~190KB base64) в DS-проекте не резолвится
+  (нет статики Next) — без инлайна маска молча ломается во всех дизайнах. Неизвестное
+  расширение или отсутствующий файл — харвест падает (осознанно: лучше упасть, чем отдать
+  битую маску). Новый public-ассет в CSS просто увеличит styles.css — это норма.
 - `.design-sync/assets/` гитигнорится и регенерируется (не коммитим woff2/CSS).
 
 ## Чистка CSS под токен-экстрактор claude.ai/design (важно)
@@ -151,7 +160,9 @@ CSS — он НЕ в нашем бандле, править его руками
 
 - В synth-режиме (без dist `.d.ts`) ts-morph НЕ резолвит inline-типы с импортами (`VariantProps`,
   доменные типы `WorkshopEntry`/`Illustration`/`WheelGraph`) → пропы выходят пустыми. Поэтому тело
-  интерфейса каждого из 8 задано вручную в **`cfg.dtsPropsFor.<Name>`**.
+  интерфейса КАЖДОГО компонента (все 17) задано вручную в **`cfg.dtsPropsFor.<Name>`**.
+- `WarmWindowHero` с Шага 6 — **без пропов** (`degrees` удалён вместе с мини-тизером Колеса;
+  вместо него логотип-трафарет «Наблюдатель»).
 - Рассинхрон с исходником ловится только глазами: при правке вариантов/размеров `button.tsx` или
   пропов любого компонента — обновить соответствующий `dtsPropsFor.<Name>`.
 
@@ -163,8 +174,12 @@ CSS — он НЕ в нашем бандле, править его руками
 
 ## Превью
 
-- `.design-sync/previews/<Name>.tsx` — авторские (16), импорт из `"kirilov"` (Rule 1 шимит на
+- `.design-sync/previews/<Name>.tsx` — авторские (17), импорт из `"kirilov"` (Rule 1 шимит на
   `window.Kirilov.<Name>`). Импорт через `@/components/...` в превью НЕ использовать.
+- **`WarmWindowHero` — `cfg.overrides`: `cardMode:"single"`, `viewport:"1280x800"`.** Дефолтный
+  вьюпорт капчера — ровно 900×700, а `.hero-logo` скрыт медиа-запросом `max-width: 900px` →
+  на дефолте логотип-трафарет в кадр НЕ попадал (граница включительна!). Любому новому
+  компоненту с десктопным брейкпоинтом ≥900px задавать явный viewport через overrides.
 - Имена ячеек — латиницей с заглавной (`/^[A-Z]/`): кириллические экспорты не станут ячейками.
 - **Детерминизм motion в превью.** `package-capture` НЕ глушит анимации и НЕ эмулирует
   reduced-motion: `settle()` ждёт только `document.fonts.ready` + `img.decode()`, дальше сразу
@@ -233,7 +248,7 @@ CSS — он НЕ в нашем бандле, править его руками
   редакционный компонент начнёт импортировать ещё какой-то `next/*` (напр. `next/navigation`) —
   добавить шим и путь в `tsconfig.bundle.json`.
 - **`tsconfig.bundle.json` — только чистый JSON** (см. критическую гочу выше).
-- **dtsPropsFor — ручной для всех 16**: рассинхрон с исходниками ловится глазами.
+- **dtsPropsFor — ручной для всех 17**: рассинхрон с исходниками ловится глазами.
 - **Синтетика в превью** (entry/illustration/graph, data-URI картинка) может разойтись с реальными
   типами при правке схем — превью просто перестанут собираться (видно в build-логе).
 - **woff2-хэши** next/font контентно-стабильны; имя CSS-чанка хэшируется — харвест глоббит по маске.
@@ -272,4 +287,7 @@ upload (sentinel → full writes → deletes дословно из `upload.delet
   Tailwind внутри `@supports (…backdrop-filter:var(--tw))` (был и до чистки — прежний «1 missing»);
   серверный `check_design_system` его НЕ флагал → undefined-ссылки он не проверяет, значит и эти 6
   не даст. Если порог превысит — глянуть `[TOKENS_MISSING]`.
-- render-check 16/16 чисто; `bad/thin/variantsIdentical = 0`.
+- render-check 17/17 чисто; `bad/thin/variantsIdentical = 0`.
+- `kind-tagged` в логе харвеста теперь **24** (был ~23): добавилась `--tw-duration`
+  (`.duration-200` — шеврон свёрток WheelIndex). Легитимная одиночная утилита, не рецидив
+  markdown-скана; рецидив — это голые `.ring-3`/`.ring-ring\/50` в шипнутом CSS.
