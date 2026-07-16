@@ -9,7 +9,7 @@ import { WheelIndex } from "@/components/wheel/WheelIndex";
 import { WheelGraph } from "@/components/wheel/WheelGraph";
 import { getAllStories, getBooks } from "@/lib/content";
 import { themes } from "@/content/themes";
-import { buildGraph, themeDegree } from "@/lib/graph";
+import { buildGraph } from "@/lib/graph";
 import { computeWheelLayout } from "@/lib/wheelLayout";
 import { BOOK_IDS } from "@/content/schema";
 
@@ -24,8 +24,6 @@ export default function VitrinaHome() {
   );
   const graph = buildGraph(stories, themes);
   const layout = computeWheelLayout(graph);
-  // степени тем (build-time) — тизеру «Колеса» на hero (вес + лит = макс. степень)
-  const degrees = themeDegree(graph);
   const books = getBooks().sort(
     (a, b) => BOOK_IDS.indexOf(a.id) - BOOK_IDS.indexOf(b.id),
   );
@@ -35,7 +33,7 @@ export default function VitrinaHome() {
       {/* Первый экран — «Тёплое окно»: окно горит с первого пикселя (§4/§8/§10).
           Несёт единственный <h1> страницы; full-bleed, вне контентного контейнера.
           Пре-пейнт гейт зачина (data-zachin-boot) живёт в корневом app/layout.tsx. */}
-      <WarmWindowHero degrees={degrees} />
+      <WarmWindowHero />
 
       {/* Якорь «Колеса» — всегда в потоке (0-высоты, шва не рисует). Десктоп: стоит
           перед full-bleed ночью → «↓ блуждать по Колесу» лендит на граф. Мобильный:

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import type { WheelGraph, WheelNode } from "@/lib/graph";
@@ -16,13 +16,21 @@ import { useZachin } from "@/components/haunted/zachinContext";
 import { cn } from "@/lib/utils";
 import { ThemeNode, type NodeState } from "./ThemeNode";
 import { StoryNode } from "./StoryNode";
-import { AnchorPlate, ANCHOR_PLATE_H } from "./AnchorPlate";
+import { AnchorPlate } from "./AnchorPlate";
 import { useReadStories } from "./readStories";
 import { resolvedWheelAnchors } from "@/lib/anchors";
 
 // Задержка «подержать» перед подсветкой узла — чтобы случайные пролёты мыши над
 // кругами при небыстром движении не захватывали их.
 const HOVER_DWELL_MS = 200;
+
+// Ротация покоя (Шаг 6): в покое Колесо медленно перещёлкивает горящую тему по
+// каноническому кругу (themes.ts) — «каждый оборот встречает другим понятием».
+// Смена только defaultLit (litId), укладку не трогает → без reflow; вся плавность —
+// CSS-кроссфейд 1.2–1.4s на рёбрах/кольцах/подписях (globals.css). Живое внимание
+// (hover/фокус) убивает таймер; рестарт — после 12 с тишины. Под reduced — выкл.
+const ROTOR_PERIOD_MS = 15_000;
+const ROTOR_RESTART_MS = 12_000;
 
 // Радиус узла-темы: ПЛОЩАДЬ ∝ степени — √-шкала, честные «чернила» (Шаг 3.4).
 // Линейный кламп схлопывал вершину («Человек» 22 и «Душа» 17 выходили почти равными);
@@ -95,15 +103,27 @@ export function WheelCanvas({
     );
   }, [graph, degree]);
 
+  // Канонический круг тем (порядок themes.ts) — по нему идёт ротация покоя.
+  const themeOrderIds = useMemo(
+    () => graph.nodes.filter((n) => n.kind === "theme").map((n) => n.id),
+    [graph],
+  );
+
+  // Кто «горит» в покое: старт — тема макс. степени (defaultLit, детерминирован на
+  // сервере → первый кадр совпадает, без hydration-mismatch), дальше ротор ведёт по
+  // кругу. Таймер стартует post-mount (useEffect) — на SSR ротации нет.
+  const [restLitId, setRestLitId] = useState<string | null>(defaultLitId);
+
   const activeId = keyboardFocusId ?? hoveredId;
   const activeNode = activeId
     ? orderedNodes.find((n) => n.id === activeId) ?? null
     : null;
   const activeStorySlug = activeNode?.kind === "story" ? activeNode.id : null;
 
-  // Покой больше не пустой: без внимания горит defaultLit; внимание переносит огонь.
-  // litId ведёт натрий (кто горит); «сильный дим» остаётся на activeId (живое внимание).
-  const litId = activeId ?? defaultLitId;
+  // Покой больше не пустой: без внимания горит restLitId (ротор ведёт его по кругу от
+  // defaultLit); внимание переносит огонь. litId ведёт натрий (кто горит); «сильный
+  // дим» остаётся на activeId (живое внимание).
+  const litId = activeId ?? restLitId;
 
   // Покой против внимания (Шаг 3.4): в покое горящая тема — лампа, не прожектор.
   // Веер litId тлеет (рёбра 0.4, пыль sodium-deep); полный огонь — только под живым
@@ -162,6 +182,47 @@ export function WheelCanvas({
     },
     [],
   );
+
+  // ── Ротация покоя ──────────────────────────────────────────────────────────
+  // Рекурсивный таймер: перещёлкивает restLitId на следующую тему круга и сам себя
+  // перепланирует на период. Под reduced-motion не заводится (statичный «Максимум»).
+  const rotorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rotorStarted = useRef(false);
+  const scheduleRotor = useCallback(
+    (delay: number) => {
+      if (rotorTimer.current) clearTimeout(rotorTimer.current);
+      if (reduced || themeOrderIds.length === 0) return;
+      // локальный шаг рекурсивно перепланирует себя на период — рекурсия живёт вне
+      // useCallback (react-compiler запрещает мемо-значению ссылаться на себя)
+      const step = () => {
+        setRestLitId((cur) => {
+          const i = cur ? themeOrderIds.indexOf(cur) : -1;
+          return themeOrderIds[(i + 1) % themeOrderIds.length];
+        });
+        rotorTimer.current = setTimeout(step, ROTOR_PERIOD_MS);
+      };
+      rotorTimer.current = setTimeout(step, delay);
+    },
+    [reduced, themeOrderIds],
+  );
+
+  // Внимание (hover/фокус) ставит ротор на паузу; уход — рестарт после 12 с тишины.
+  // Первый запуск (post-mount) — через полный период (15 с), чтобы Колесо встретило
+  // спокойным «Максимумом», а не дёрнулось сразу.
+  useEffect(() => {
+    if (activeId != null) {
+      if (rotorTimer.current) {
+        clearTimeout(rotorTimer.current);
+        rotorTimer.current = null;
+      }
+    } else {
+      scheduleRotor(rotorStarted.current ? ROTOR_RESTART_MS : ROTOR_PERIOD_MS);
+      rotorStarted.current = true;
+    }
+    return () => {
+      if (rotorTimer.current) clearTimeout(rotorTimer.current);
+    };
+  }, [activeId, scheduleRotor]);
 
   // Состояние (натрий) — от litId (в покое = defaultLit), не от activeId.
   const nodeState = (id: string): NodeState => {
@@ -285,6 +346,9 @@ export function WheelCanvas({
       <svg
         viewBox={`0 0 ${WHEEL_VIEW.width} ${WHEEL_VIEW.height}`}
         className="h-auto w-full"
+        // «живое внимание» → CSS ускоряет кроссфейд рёбер/колец/подписей до .3s;
+        // в покое (ротация) переходы медленные (1.2–1.4s), «лампа, а не вспышка».
+        data-live={live ? "true" : "false"}
       >
         {/* рёбра: холод → след прочитанного → тление (покой) → огонь (внимание).
             Тление 0.4 и след 0.34 близки намеренно: покой выглядит «обжитым»,
@@ -399,18 +463,15 @@ export function WheelCanvas({
         // кегль подписи — та же формула, что в ThemeNode (√-шкала)
         const size = Math.min(19.5, 8.5 + 2.3 * Math.sqrt(deg));
         // ширину подписи меряет прототип через getBBox; на рендере его нет — оцениваем
-        const labelW = node.label.length * size * 0.55;
-        // снаружи кольца, за концом подписи: r+8 (старт подписи) + ширина + воздух + полплашки
-        const away = r + 8 + labelW + 18 + ANCHOR_PLATE_H * 0.42;
-        // сдвиг по радиали — уводит плашку с горизонтали подписи (не накрывать соседей)
-        const ang = Math.atan2(
-          p.y - WHEEL_VIEW.height / 2,
-          p.x - WHEEL_VIEW.width / 2,
-        );
+        // по формуле движка (Шаг 6): lblLen·fs·0.56 + 26 (запас на счётчик/кернинг)
+        const labelW = node.label.length * size * 0.56 + 26;
+        // снаружи кольца, за концом подписи, с равным воздухом (движок: r+9+lw+30);
+        // ВЕРТИКАЛЬНО ПО ЦЕНТРУ УЗЛА — без радиального сдвига (он уводил плашку к
+        // соседям: «Иллюзию» к «Выбору», «Смерть» вправо, скрин ревью Шаг 6).
+        const away = r + 9 + labelW + 30;
         const ox = themeSide(t.theme) === "start" ? away : -away;
-        const oy = Math.sin(ang) * (ANCHOR_PLATE_H * 0.5 + 14);
         const fx = p.x + ox + (t.nudge?.x ?? 0);
-        const fy = p.y + oy + (t.nudge?.y ?? 0);
+        const fy = p.y + (t.nudge?.y ?? 0);
         const state = nodeState(t.theme);
         const lit = state === "active" || state === "highlight"; // как ThemeNode
         const dimmed = activeId != null && state === "dim"; // как opacity-25 узла

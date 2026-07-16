@@ -388,89 +388,40 @@ html[data-reading-mode="paged"] [data-reading-content] {
   );
 }
 
-/* созвездие «Колесо» — точка входа, не лаборатория. Лёгкий декоративный SVG. */
-.warm-hero .wheel-hint {
+/* Логотип-трафарет «Наблюдатель» (Шаг 6) — заменяет мини-тизер Колеса. Знак-марка,
+   нанесённая на стену фасада: тон «Чернила» (--ink-soft), не вывеска — трафарет.
+   Статичен (§10); лежит под виньеткой (z ниже её z:6); скрыт на мобильном (<900px, где
+   ночи/графа нет). Маска — PNG с альфой (luminance→alpha на сборке ассета,
+   scripts не нужен на рендере), поэтому без зависимости от mask-mode и без ореолов. */
+.warm-hero .hero-logo {
   position: absolute;
   z-index: 4;
-  right: 6%;
-  bottom: 6%;
-  width: clamp(220px, 24vw, 330px);
-  aspect-ratio: 1;
-  opacity: 1; /* было 0.62 — мутнило всё разом; тишину дают цвета слоёв */
+  right: 5%;
+  bottom: 7%;
+  width: 160px;
   pointer-events: none;
 }
-/* «тихая стена»: мягкое пятно ночи гасит сетку окон под созвездием.
-   Радиал в прозрачность → никакой рамки/карточки. Запас слева — под подпись. */
-.warm-hero .wheel-hint::before {
-  content: "";
-  position: absolute;
-  inset: -20% -34% -16% -34%;
-  background: radial-gradient(
-    56% 50% at 50% 47%,
-    oklch(0.15 0.013 256 / 0.94) 0%,
-    oklch(0.15 0.013 256 / 0.72) 56%,
-    transparent 79%
-  );
+.warm-hero .hero-logo .stencil {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--ink-soft);
+  opacity: 0.42;
+  -webkit-mask: url("/img/logo-nablyudatel.png") center / contain no-repeat;
+  mask: url("/img/logo-nablyudatel.png") center / contain no-repeat;
 }
-.warm-hero .wheel-hint svg {
-  position: relative; /* поверх ::before (порядок в DOM решает) */
-  overflow: visible; /* лечит обрезку подписи («Человек») краем viewBox */
-}
-.warm-hero .wheel-hint .cap {
-  position: absolute;
-  left: 6px;
-  bottom: -2px;
+.warm-hero .hero-logo .cap {
+  margin: 10px 0 0 4px;
   font-family: var(--font-mono-accent), ui-monospace, monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  opacity: 1; /* читаемость на тихой стене есть, полупрозрачность не нужна */
+  opacity: 0.85;
 }
-/* еле заметная пунктирная орбита кольца */
-.warm-hero .th-orbit {
-  fill: none;
-  stroke: oklch(0.85 0.01 250 / 0.1);
-  stroke-width: 1;
-  stroke-dasharray: 2 7;
-}
-.warm-hero .st-link {
-  stroke: oklch(0.85 0.01 250 / 0.12);
-  stroke-width: 1;
-}
-.warm-hero .st-link.lit {
-  stroke: var(--sodium);
-  opacity: 0.8;
-  stroke-width: 1.1;
-}
-.warm-hero .st-node {
-  fill: oklch(0.72 0.012 250 / 0.5);
-}
-.warm-hero .st-node.lit {
-  fill: var(--sodium);
-}
-.warm-hero .th-ring {
-  fill: var(--night);
-  stroke: oklch(0.82 0.01 250 / 0.4);
-  stroke-width: 1.2;
-}
-.warm-hero .th-ring.lit {
-  fill: var(--sodium);
-  stroke: var(--sodium);
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--sodium) 45%, transparent));
-}
-.warm-hero .th-halo {
-  fill: color-mix(in oklab, var(--sodium) 12%, transparent);
-}
-/* тизер: подпись горящей темы — антиквой (§5 «смысл»), в тон текста сцены */
-.warm-hero .th-label {
-  font-family: var(--font-prose), Georgia, serif;
-  font-size: 10.5px;
-  fill: var(--ink);
-}
-.warm-hero .th-label.lit {
-  fill: var(--ink);
-  font-weight: 600;
+@media (max-width: 900px) {
+  .warm-hero .hero-logo {
+    display: none;
+  }
 }
 
 /* текст как материя — реальный контент сцены */
@@ -656,9 +607,6 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
     width: 30vw;
     max-width: 180px;
   }
-  .warm-hero .wheel-hint {
-    display: none;
-  }
   .warm-hero .copy {
     position: relative;
     top: auto;
@@ -766,13 +714,50 @@ html[data-zachin-boot] .warm-hero .kicker .cur {
 }
 
 /* Рёбра «Колеса»: значения (холод 0.11 · след 0.34 · тление 0.4 · огонь 0.9) задают
-   инлайн-атрибуты в WheelCanvas; здесь — только плавный переход покой↔внимание
-   (Шаг 3.4 «лампа, а не прожектор»). */
+   инлайн-атрибуты в WheelCanvas; здесь — только плавность покой↔внимание. В покое
+   переход медленный (1.4s) — ротация перещёлкивает горящую тему кроссфейдом, «лампа,
+   а не вспышка» (Шаг 6); под живым вниманием (svg[data-live]) — короткий 0.3s. */
 .wheel-link {
   transition:
-    opacity 0.35s,
-    stroke 0.35s,
-    stroke-width 0.35s;
+    opacity 1.4s ease,
+    stroke 1.4s ease,
+    stroke-width 1.4s ease;
+}
+svg[data-live="true"] .wheel-link {
+  transition-duration: 0.3s;
+}
+
+/* Узлы-темы (кольцо/подпись/счётчик) и их ореол — тот же кроссфейд, иначе смена
+   горящей темы на ротации «щёлкает» (Шаг 6). Покой 1.2s / внимание 0.3s. */
+.wheel-theme-part {
+  transition:
+    fill 1.2s ease,
+    stroke 1.2s ease;
+}
+.wheel-theme-halo {
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.wheel-theme-halo.is-lit {
+  opacity: 0.75;
+}
+svg[data-live="true"] .wheel-theme-part,
+svg[data-live="true"] .wheel-theme-halo {
+  transition-duration: 0.3s;
+}
+svg[data-live="true"] .wheel-theme-halo.is-lit {
+  opacity: 1;
+}
+
+/* Пыль рассказов: заливка тлеет кроссфейдом (покой 1.4s), радиус остаётся отзывчивым
+   (0.3s) — под вниманием оба коротки. */
+.wheel-story-dot {
+  transition:
+    fill 1.4s ease,
+    r 0.3s ease;
+}
+svg[data-live="true"] .wheel-story-dot {
+  transition-duration: 0.3s;
 }
 
 /* ════════ Разворачивание списков доступного «Колеса» (§5, WheelIndex) ════════

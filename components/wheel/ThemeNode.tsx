@@ -35,8 +35,13 @@ export function ThemeNode({
   const arcCircumference = 2 * Math.PI * arcRadius;
   return (
     <>
-      {/* ореол присутствия — только когда горит (созвездие, не лаборатория) */}
-      {lit && <circle r={radius + 7} className="fill-sodium/10" />}
+      {/* ореол присутствия — виден когда тема горит (созвездие, не лаборатория).
+          Всегда в DOM: opacity ведёт CSS (0 → 0.75 в покое → 1 под вниманием),
+          иначе на ротации покоя ореол «выскакивал» бы, а не проявлялся кроссфейдом. */}
+      <circle
+        r={radius + 7}
+        className={cn("fill-sodium/10 wheel-theme-halo", lit && "is-lit")}
+      />
       {/* тема копит тепло: дуга ∝ доле прочитанных её рассказов, старт сверху.
           Живёт вне дышащего кольца, поэтому не масштабируется вместе с ним. */}
       {readFraction > 0 && (
@@ -55,6 +60,7 @@ export function ThemeNode({
         r={radius}
         strokeWidth={2}
         className={cn(
+          "wheel-theme-part",
           lit ? "fill-sodium stroke-sodium" : "fill-background stroke-foreground",
           breathe && "wheel-breathe",
         )}
@@ -66,7 +72,7 @@ export function ThemeNode({
         dy="0.30em"
         textAnchor={side}
         className={cn(
-          "font-serif",
+          "wheel-theme-part font-serif",
           lit
             ? "fill-foreground font-semibold"
             : readFraction > 0
@@ -83,7 +89,7 @@ export function ThemeNode({
         y={12 + labelSize * 0.5}
         textAnchor={side}
         className={cn(
-          "font-mono text-[8.5px]",
+          "wheel-theme-part font-mono text-[8.5px]",
           lit ? "fill-sodium" : "fill-muted-foreground/70",
         )}
       >

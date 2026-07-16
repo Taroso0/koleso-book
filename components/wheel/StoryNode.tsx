@@ -31,7 +31,7 @@ export function StoryNode({
       <circle
         r={lit ? (live ? 6 : 4.5) : 4}
         className={cn(
-          "transition-all",
+          "wheel-story-dot",
           lit
             ? live
               ? "fill-sodium" // внимание — полный огонь
