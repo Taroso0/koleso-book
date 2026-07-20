@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Сайт Евгения Кирилова — «Боковым зрением»
 
-## Getting Started
+Статический сайт на Next.js 16 (App Router, SSG) + React 19 + Tailwind v4.
+Контент лежит в репозитории — база данных и бэкенд не нужны.
 
-First, run the development server:
+## Запуск на новом устройстве
+
+### 1. Установить Node.js
+
+Нужен **Node.js 20.9 или новее** (проверено на 20 LTS и 26).
+Скачать: <https://nodejs.org> — берите версию LTS, установщик по умолчанию.
+
+Проверка после установки (в новом окне терминала):
+
+```bash
+node -v   # должно быть v20.9.0 или больше
+npm -v
+```
+
+Git: <https://git-scm.com/downloads> (если ещё не стоит).
+
+### 2. Забрать проект
+
+```bash
+git clone https://github.com/Taroso0/------.git
+cd ------
+```
+
+Если папка с проектом уже скопирована вручную (флешкой, архивом) — просто
+перейдите в неё; шаг клонирования не нужен.
+
+### 3. Установить зависимости
+
+```bash
+npm ci
+```
+
+`npm ci` ставит ровно те версии, что записаны в `package-lock.json` — так на
+новой машине будет ровно то же, что на старой. Займёт пару минут и создаст
+папку `node_modules` (~1 ГБ). Если `npm ci` ругается на рассинхрон lock-файла —
+`npm install`.
+
+### 4. Запустить
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Открыть <http://localhost:3000>. Всё.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Что переносить НЕ нужно
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `node_modules/` — ставится командой `npm ci`, копировать между машинами нельзя.
+- `.next/` — кэш сборки, создаётся сам.
+- `.env` — в проекте нет обязательных переменных окружения.
+- Шрифты, картинки, тексты рассказов — уже в репозитории.
 
-## Learn More
+## Что в репозиторий НЕ входит
 
-To learn more about Next.js, take a look at the following resources:
+- `source/*.pdf` — исходные PDF книг. Нужны **только** для перегенерации
+  контента python-скриптами. Сам сайт собирается и работает без них.
+- `ds-bundle/`, `.ds-sync/` — экспорт дизайн-системы для claude.ai/design,
+  к работе сайта отношения не имеет, восстанавливается своим пайплайном.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Переменные окружения (необязательно)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Единственная переменная — адрес сайта, она подставляется в `sitemap.xml`,
+`robots.txt` и og-теги. Без неё используется заглушка `https://kirilov.example`,
+на локальную разработку это никак не влияет. Для боевого деплоя создайте
+`.env.local`:
 
-## Deploy on Vercel
+```
+NEXT_PUBLIC_SITE_URL=https://адрес-сайта
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Команды
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev        # дев-сервер, http://localhost:3000
+npm run build      # прод-сборка (заодно валидирует контент)
+npm start          # запуск собранного сайта (после build)
+npm test           # тесты (vitest)
+npm run typecheck  # проверка типов
+npx eslint app components lib content   # линт живого кода
+```
+
+## Если что-то не запускается
+
+**Порт 3000 занят** (Windows, PowerShell):
+
+```powershell
+Get-NetTCPConnection -LocalPort 3000 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+**Turbopack: «Failed to restore task data (corrupted database)»** — удалить папку
+`.next` и запустить снова.
+
+**Ошибки установки** — удалить `node_modules` и `package-lock.json` не нужно:
+сначала `npm cache clean --force`, затем `npm ci`.
+
+## Перегенерация контента из PDF (редко, только с исходниками)
+
+Требуется Python 3 и положенные в `source/` PDF книг:
+
+```bash
+pip install pymupdf pillow
+python scripts/ingest_pdf.py              # PDF → content/_raw/
+python scripts/build_mdx.py               # _raw → content/stories/ + плашки
+python scripts/illustrations_manifest.py  # манифест размеров плашек
+```
+
+На Windows перед запуском обязательно `PYTHONUTF8=1`, иначе кириллица падает на
+cp1251.
+
+## Документация
+
+- `CLAUDE.md` — как устроен проект и правила работы с ним
+- `docs/концепция.md` — источник истины по смыслу и стилю
+- `docs/тех-спецификация.md` — архитектурные решения
+- `ИЗМЕНЕНИЯ.md` — журнал изменений простым языком
