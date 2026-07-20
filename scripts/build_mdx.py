@@ -9,7 +9,10 @@
     firstLine, illustration?, themes: []) + тело из _raw (без строки '# Заглавие').
 Плюс docs/proofreading-checklist.md.
 
-ВАЖНО: themes[] оставлены пустыми — их проставляет человек при вычитке (§11-A1).
+ВАЖНО: themes[] проставляет человек при вычитке (§11-A1), поэтому скрипт их
+НЕ трогает: у нового рассказа пишется пустой список, у уже существующего
+переносится текущее значение из .mdx. Так же сохраняются галочки чек-листа.
+Тело рассказа регенерируется из _raw безопасно — вычитка живёт именно там.
 """
 from __future__ import annotations
 
@@ -92,7 +95,29 @@ def yaml_dq(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
+THEMES_RE = re.compile(r"^themes:.*$", re.MULTILINE)
+EMPTY_THEMES = "themes: [] # TODO: проставить вручную при вычитке"
+
+
+def existing_themes_line(dest: Path) -> str | None:
+    """Строка themes: из уже существующего .mdx — если темы реально проставлены.
+
+    Ручная простановка тем — работа человека, и она хранится только здесь
+    (в _raw её нет). Без этого переноса повторный прогон обнулил бы вычитку.
+    """
+    if not dest.exists():
+        return None
+    m = THEMES_RE.search(dest.read_text(encoding="utf-8"))
+    if not m:
+        return None
+    line = m.group(0)
+    # пустой список — темы ещё не проставлены, переносить нечего
+    return None if re.match(r"^themes:\s*\[\s*\]", line) else line
+
+
 def write_mdx(book_id: str, story, first_line: str, illustration: str | None, body: str) -> None:
+    dest = STORIES / f"{story.slug}.mdx"
+    themes_line = existing_themes_line(dest) or EMPTY_THEMES
     fm = [
         "---",
         f'slug: "{yaml_dq(story.slug)}"',
@@ -103,15 +128,25 @@ def write_mdx(book_id: str, story, first_line: str, illustration: str | None, bo
     ]
     if illustration:
         fm.append(f'illustration: "{illustration}"')
-    fm.append("themes: [] # TODO: проставить вручную при вычитке")
+    fm.append(themes_line)
     fm.append("---")
     STORIES.mkdir(parents=True, exist_ok=True)
-    (STORIES / f"{story.slug}.mdx").write_text(
-        "\n".join(fm) + "\n\n" + body, encoding="utf-8", newline="\n"
-    )
+    dest.write_text("\n".join(fm) + "\n\n" + body, encoding="utf-8", newline="\n")
+
+
+CHECK_RE = re.compile(r"^- \d+ .* — \[(.)\] вычитан · \[(.)\] темы проставлены  `(.+)`$", re.MULTILINE)
+
+
+def existing_checkmarks() -> dict[str, tuple[str, str]]:
+    """slug → (галочка «вычитан», галочка «темы проставлены») из текущего чек-листа."""
+    if not CHECKLIST.exists():
+        return {}
+    text = CHECKLIST.read_text(encoding="utf-8")
+    return {m.group(3): (m.group(1), m.group(2)) for m in CHECK_RE.finditer(text)}
 
 
 def write_checklist(by_book: dict) -> None:
+    marks = existing_checkmarks()  # прогресс вычитки — тоже ручная работа, не теряем
     lines = [
         "# Чек-лист вычитки рассказов",
         "",
@@ -124,7 +159,11 @@ def write_checklist(by_book: dict) -> None:
         lines.append(f"## {title}")
         lines.append("")
         for order, story_title, slug in by_book[book.id]:
-            lines.append(f"- {order:02d} «{story_title}» — [ ] вычитан · [ ] темы проставлены  `{slug}`")
+            read_mark, themes_mark = marks.get(slug, (" ", " "))
+            lines.append(
+                f"- {order:02d} «{story_title}» — [{read_mark}] вычитан · "
+                f"[{themes_mark}] темы проставлены  `{slug}`"
+            )
         lines.append("")
     CHECKLIST.parent.mkdir(parents=True, exist_ok=True)
     CHECKLIST.write_text("\n".join(lines), encoding="utf-8", newline="\n")
