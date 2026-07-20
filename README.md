@@ -22,8 +22,8 @@ Git: <https://git-scm.com/downloads> (если ещё не стоит).
 ### 2. Забрать проект
 
 ```bash
-git clone https://github.com/Taroso0/------.git
-cd ------
+git clone https://github.com/Taroso0/koleso-book.git
+cd koleso-book
 ```
 
 Если папка с проектом уже скопирована вручную (флешкой, архивом) — просто
