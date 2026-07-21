@@ -97,6 +97,10 @@ def yaml_dq(s: str) -> str:
 
 THEMES_RE = re.compile(r"^themes:.*$", re.MULTILINE)
 EMPTY_THEMES = "themes: [] # TODO: проставить вручную при вычитке"
+# Хвост-напоминание с пустого списка. Когда темы проставлены, он теряет смысл, но
+# раньше переносился дословно вместе со строкой — и во всех 34 файлах жил «TODO»
+# при сделанной работе. Снимаем его при переносе.
+TODO_TAIL_RE = re.compile(r"\s*#\s*TODO:.*$")
 
 
 def existing_themes_line(dest: Path) -> str | None:
@@ -112,7 +116,9 @@ def existing_themes_line(dest: Path) -> str | None:
         return None
     line = m.group(0)
     # пустой список — темы ещё не проставлены, переносить нечего
-    return None if re.match(r"^themes:\s*\[\s*\]", line) else line
+    if re.match(r"^themes:\s*\[\s*\]", line):
+        return None
+    return TODO_TAIL_RE.sub("", line).rstrip()
 
 
 def write_mdx(book_id: str, story, first_line: str, illustration: str | None, body: str) -> None:
