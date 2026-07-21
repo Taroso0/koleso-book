@@ -29,5 +29,6 @@ export default function Image({ src, alt = "", ...rest }: ImageProps) {
   const s = typeof src === "string" ? src : (src?.src ?? "");
   const clean: Record<string, unknown> = {};
   for (const k in rest) if (!NEXT_ONLY.has(k)) clean[k] = rest[k];
+  // eslint-disable-next-line @next/next/no-img-element -- в этом и смысл шима: заменить next/image на <img>
   return <img src={s} alt={alt} {...clean} />;
 }

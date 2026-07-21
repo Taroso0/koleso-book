@@ -34,16 +34,11 @@ jobs:
       - name: Прод-сборка (заодно zod-валидация контента)
         run: npm run build
 
-      - name: Линт тестов (строго, 0 ошибок)
-        run: npx eslint tests
-
-      # ── Информационно, не блокирует ──────────────────────────────────
-      # У линта живого кода зафиксированный техдолг — ровно 8 известных
-      # ошибок (react-hooks / React Compiler). Шаг показывает регрессии,
-      # но не валит сборку на известном долге и не маскирует его.
-      - name: Линт живого кода (информационно; baseline 8 ошибок)
-        run: npx eslint app components lib content
-        continue-on-error: true
+      # Линтит весь репозиторий: ds-bundle/.ds-sync/coverage вынесены в
+      # globalIgnores (eslint.config.mjs), поэтому шума больше нет. Baseline —
+      # 0 проблем; вернувшаяся react-hooks/* это регресс, а не «известная».
+      - name: Линт (строго, 0 проблем)
+        run: npm run lint
 
       - name: Артефакт покрытия
         if: always()

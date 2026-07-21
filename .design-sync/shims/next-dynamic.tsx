@@ -8,6 +8,7 @@ import * as React from "react";
 
 export default function dynamic<P extends object>(
   loader: () => Promise<React.ComponentType<P>>,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- держим сигнатуру next/dynamic
   _options?: unknown,
 ) {
   const Lazy = React.lazy(async () => ({ default: await loader() }));

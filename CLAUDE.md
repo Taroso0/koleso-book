@@ -42,8 +42,8 @@ npm run typecheck  # проверка типов (tsc --noEmit)
 npm test           # тесты (vitest run) — 177 тестов в 16 файлах, все зелёные
 npm run test:watch # тесты в watch-режиме
 npm run test:coverage   # покрытие с порогом 90% (падает, если ниже)
-npx eslint app components lib content   # линт живого кода — НЕ `npm run lint`:
-                   # тот захватывает сгенерированный ds-bundle/ (~1850 проблем шума)
+npm run lint       # линт всего репозитория (0 проблем); сгенерированный
+                   # ds-bundle/, .ds-sync/ и coverage/ вынесены в globalIgnores
 ```
 **Тесты — Vitest + jsdom + Testing Library** (`vitest.config.ts`, тесты в `tests/`).
 Область покрытия задана явно и с порогом 90%: слой логики/данных (`lib/`, схемы,
@@ -67,11 +67,12 @@ python scripts/illustrations_manifest.py  # размеры плашек → cont
 Артефакты пайплайна детерминированы и коммитятся.
 
 ## Проверка изменений (baseline)
-`npx eslint app components lib content` сейчас даёт **0 ошибок** — весь прежний
-техдолг группы react-hooks (refs, set-state-in-effect, preserve-manual-memoization
-в `WheelCanvas`) исправлен. Провал линта = любая ошибка; вернувшаяся `react-hooks/*`
-— регресс, не «известная». Отдельная (не связанная) осознанная задача — добавить
-ignores для `ds-bundle/` в `eslint.config.mjs`, чтобы `npm run lint` не тонул в шуме.
+`npm run lint` сейчас даёт **0 проблем по всему репозиторию** — техдолг группы
+react-hooks (refs, set-state-in-effect, preserve-manual-memoization в `WheelCanvas`)
+исправлен, а сгенерированный `ds-bundle/`, тулчейн `.ds-sync/` и `coverage/` вынесены
+в `globalIgnores` (`eslint.config.mjs`). Провал линта = любая ошибка ИЛИ предупреждение;
+вернувшаяся `react-hooks/*` — регресс, не «известная». CI гоняет ровно `npm run lint`
+блокирующим шагом.
 
 ## Архитектура
 Алиас импорта: `@/*` → корень репозитория.

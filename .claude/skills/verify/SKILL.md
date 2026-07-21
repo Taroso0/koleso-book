@@ -11,17 +11,19 @@ npx tsc --noEmit
 ```
 Должно быть 0 ошибок.
 
-## 2. Линт — только живой код
+## 2. Линт
 ```bash
-npx eslint app components lib content
+npm run lint
 ```
-**Не `npm run lint`** — он захватывает сгенерированный `ds-bundle/` (~1850 проблем шума).
+Линтит весь репозиторий: сгенерированный `ds-bundle/`, тулчейн `.ds-sync/` и
+`coverage/` вынесены в `globalIgnores` (`eslint.config.mjs`), поэтому шума нет.
 
-Baseline чист — **0 ошибок**. Прежние 8 (react-hooks/refs, set-state-in-effect,
-preserve-manual-memoization в `WheelCanvas`) исправлены; техдолга больше нет.
+Baseline чист — **0 проблем** (ни ошибок, ни предупреждений). Прежние 8
+(react-hooks/refs, set-state-in-effect, preserve-manual-memoization в `WheelCanvas`)
+исправлены; техдолга больше нет.
 
-**Провал шага = любая ошибка.** Если вернулась ошибка `react-hooks/*` — это регресс,
-чинить, а не добавлять в «известные».
+**Провал шага = любая ошибка или предупреждение.** Если вернулась ошибка
+`react-hooks/*` — это регресс, чинить, а не добавлять в «известные».
 
 ## 3. Тесты
 ```bash
