@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { fontProse, fontSystem, fontMono } from "@/lib/fonts";
 import { MotionProvider } from "@/components/motion/MotionProvider";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// Домен — за деплоем (env). Плейсхолдер до подтверждения автором; нужен для абсолютных
-// OG/canonical/sitemap URL (§11-E3). См. docs/отложенное.md.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kirilov.example";
 const SITE_DESCRIPTION =
   "Литературная вселенная Евгения Кирилова: «офисная готика», «Колесо» смыслов и проза, которую видно боковым зрением.";
 

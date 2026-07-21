@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllStories, getBooks } from "@/lib/content";
 import { getWorkshopEntries } from "@/lib/workshop";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kirilov.example";
+import { SITE_URL } from "@/lib/site";
 
 // Sitemap всех маршрутов (§11-E3). Один файл — у нас ~45 URL; generateSitemaps нужен
 // лишь для >50k/шардинга. Контент известен на сборке → статический sitemap.
