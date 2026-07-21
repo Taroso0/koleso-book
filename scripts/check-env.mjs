@@ -7,7 +7,7 @@
 //
 // Сейчас предупреждает, но НЕ роняет сборку: сайт ещё не запускается, красный build
 // мешал бы работе. Когда появится дата запуска — заменить console.warn на
-// process.exit(1) (пункт заведён в docs/отложенное.md).
+// process.exit(1) (пункт заведён в docs/задачи.md).
 
 const PLACEHOLDER = "https://kirilov.example"; // = SITE_URL_PLACEHOLDER из lib/site.ts
 
