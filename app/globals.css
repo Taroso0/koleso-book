@@ -989,6 +989,15 @@ svg[data-live="true"] .wheel-story-dot {
   line-height: 0.9;
   color: var(--foreground);
 }
+/* Экран ошибки несёт СЛОВО («СБОЙ»), а не число: четыре кириллические капители при
+   20vw задавили бы реплику ниже и полезли бы за край на узких экранах. Тот же
+   регистр, просто тише. line-height поднят с 0.9 — у «Й» есть надстрочная кратка,
+   и при 0.9 она наезжала на строку-кикер (у цифр «404» такой проблемы нет). */
+.notfound__code--word {
+  font-size: clamp(3rem, 12vw, 7.5rem);
+  line-height: 1.08;
+  letter-spacing: 0.04em;
+}
 .notfound__line {
   font-size: clamp(1.25rem, 2.9vw, 2rem);
   font-weight: 420;
