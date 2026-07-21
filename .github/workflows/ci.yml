@@ -34,6 +34,11 @@ jobs:
       - name: Прод-сборка (заодно zod-валидация контента)
         run: npm run build
 
+      # Единственный числовой порог по скорости. Пороги — «храповик» от факта:
+      # ловят незаметный рост, а не требуют похудеть. См. scripts/check-bundle-size.mjs.
+      - name: Вес страниц (бюджет initial JS)
+        run: npm run check:size
+
       # Линтит весь репозиторий: ds-bundle/.ds-sync/coverage вынесены в
       # globalIgnores (eslint.config.mjs), поэтому шума больше нет. Baseline —
       # 0 проблем; вернувшаяся react-hooks/* это регресс, а не «известная».
