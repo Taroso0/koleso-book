@@ -3,6 +3,7 @@ import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { workshopEntrySchema, type WorkshopEntry } from "@/content/schema";
+import { memoInBuild } from "@/lib/buildCache";
 import type { Illustration } from "@/lib/illustrations";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -24,9 +25,7 @@ function formatIssues(error: z.ZodError): string {
     .join("\n");
 }
 
-/** Все опубликованные записи «Мастерской», свежие сверху (по date ↓, затем slug).
- *  Валидация zod на сборке: невалидный frontmatter ломает сборку с указанием файла и поля. */
-export function getWorkshopEntries(): WorkshopEntry[] {
+function readWorkshopEntries(): WorkshopEntry[] {
   if (!fs.existsSync(WORKSHOP_DIR)) return [];
   const entries = fs
     .readdirSync(WORKSHOP_DIR)
@@ -49,8 +48,21 @@ export function getWorkshopEntries(): WorkshopEntry[] {
   );
 }
 
+// Диск читается один раз за сборку (в dev и тестах кэш выключен — см. buildCache).
+const entriesOnce = memoInBuild(readWorkshopEntries);
+const entryBySlug = memoInBuild(
+  () => new Map(entriesOnce().map((e) => [e.slug, e])),
+);
+
+/** Все опубликованные записи «Мастерской», свежие сверху (по date ↓, затем slug).
+ *  Валидация zod на сборке: невалидный frontmatter ломает сборку с указанием файла и поля.
+ *  Отдаём копию — вызывающий волен сортировать результат на месте. */
+export function getWorkshopEntries(): WorkshopEntry[] {
+  return entriesOnce().slice();
+}
+
 export function getWorkshopEntry(slug: string): WorkshopEntry | undefined {
-  return getWorkshopEntries().find((e) => e.slug === slug);
+  return entryBySlug().get(slug);
 }
 
 /** Плашка записи для переиспользуемого <IllustrationPlate /> (или null).

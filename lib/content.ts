@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
+import { memoInBuild } from "@/lib/buildCache";
 import {
   storyFrontmatterSchema,
   bookSchema,
@@ -19,9 +20,7 @@ function formatIssues(error: z.ZodError): string {
     .join("\n");
 }
 
-/** Все рассказы из content/stories/*.mdx, отсортированы по order.
- *  Валидация zod на сборке: невалидный frontmatter ломает сборку с указанием файла и поля. */
-export function getAllStories(): Story[] {
+function readStories(): Story[] {
   if (!fs.existsSync(STORIES_DIR)) return [];
   const stories = fs
     .readdirSync(STORIES_DIR)
@@ -40,8 +39,7 @@ export function getAllStories(): Story[] {
   return stories.sort((a, b) => a.order - b.order);
 }
 
-/** Метаданные книг из content/books/*.json (валидируются zod). */
-export function getBooks(): Book[] {
+function readBooks(): Book[] {
   if (!fs.existsSync(BOOKS_DIR)) return [];
   return fs
     .readdirSync(BOOKS_DIR)
@@ -58,10 +56,31 @@ export function getBooks(): Book[] {
     });
 }
 
+// Диск читается один раз за сборку (в dev и тестах кэш выключен — см. buildCache).
+const storiesOnce = memoInBuild(readStories);
+const booksOnce = memoInBuild(readBooks);
+const storyBySlug = memoInBuild(
+  () => new Map(storiesOnce().map((s) => [s.slug, s])),
+);
+
+/** Все рассказы из content/stories/*.mdx, отсортированы по order.
+ *  Валидация zod на сборке: невалидный frontmatter ломает сборку с указанием файла и поля.
+ *  Отдаём копию: вызывающие сортируют результат на месте (Array.sort мутирует),
+ *  а кэш должен пережить это неизменным. */
+export function getAllStories(): Story[] {
+  return storiesOnce().slice();
+}
+
+/** Метаданные книг из content/books/*.json (валидируются zod). Тоже копия — по той же
+ *  причине: `getBooks().sort(…)` есть и на хабе, и в «Читальне», и в BookSwitcher. */
+export function getBooks(): Book[] {
+  return booksOnce().slice();
+}
+
 export function getStory(slug: string): Story | undefined {
-  return getAllStories().find((s) => s.slug === slug);
+  return storyBySlug().get(slug);
 }
 
 export function getStoriesByBook(book: string): Story[] {
-  return getAllStories().filter((s) => s.book === book);
+  return storiesOnce().filter((s) => s.book === book);
 }

@@ -18,8 +18,11 @@ import type { WorkshopEntry } from "@/content/schema";
 describe("getAllStories (реальный content/)", () => {
   const stories = getAllStories();
 
-  it("загружает корпус рассказов", () => {
-    expect(stories.length).toBeGreaterThanOrEqual(30);
+  it("корпус совпадает с оглавлениями книг — ни одного лишнего или потерянного", () => {
+    // Было `>= 30`: потеря четырёх рассказов проходила зелёной. Сверяем с суммой
+    // book.stories[] — это ещё и проверка, что .mdx не осиротел мимо оглавления.
+    const expected = getBooks().reduce((n, b) => n + b.stories.length, 0);
+    expect(stories.length).toBe(expected);
   });
 
   it("отсортированы по order по возрастанию", () => {
@@ -63,6 +66,30 @@ describe("getStory / getStoriesByBook", () => {
 
   it("getStoriesByBook: несуществующая книга → []", () => {
     expect(getStoriesByBook("нет")).toEqual([]);
+  });
+});
+
+// На сборке загрузчики мемоизированы (lib/buildCache.ts), поэтому список рассказов
+// живёт в кэше. Вызывающие сортируют его на месте (`getAllStories().sort(…)` на хабе,
+// `getBooks().sort(…)` в «Читальне» и BookSwitcher), а Array.sort мутирует — значит
+// каждый вызов обязан отдавать свежий массив, иначе кэш переупорядочится под всеми.
+describe("загрузчики отдают копию (защита кэша от сортировки на месте)", () => {
+  it("getAllStories: каждый вызов — новый массив", () => {
+    expect(getAllStories()).not.toBe(getAllStories());
+  });
+
+  it("getBooks: каждый вызов — новый массив", () => {
+    expect(getBooks()).not.toBe(getBooks());
+  });
+
+  it("getWorkshopEntries: каждый вызов — новый массив", () => {
+    expect(getWorkshopEntries()).not.toBe(getWorkshopEntries());
+  });
+
+  it("сортировка результата не меняет порядок следующего вызова", () => {
+    const before = getAllStories().map((s) => s.slug);
+    getAllStories().sort((a, b) => b.slug.localeCompare(a.slug));
+    expect(getAllStories().map((s) => s.slug)).toEqual(before);
   });
 });
 
