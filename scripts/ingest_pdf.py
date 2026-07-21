@@ -1,7 +1,15 @@
 """Шаг 0.1 — извлечение и чистка текста рассказов из печатных PDF (PyMuPDF).
 
-Запуск:  python scripts/ingest_pdf.py
+Запуск:  python scripts/ingest_pdf.py [--force] [--dry-run]
 Зависимость:  pip install pymupdf
+
+  --dry-run  ничего не писать, только показать таблицу и предупреждения
+  --force    перезаписать уже существующие content/_raw/<book>/*.md
+
+БЕЗ --force существующие файлы НЕ трогаются. Это единственный необратимый шаг
+пайплайна: в _raw живёт ручная вычитка человека, и её больше нигде нет —
+build_mdx.py регенерирует тело .mdx именно отсюда. Раньше повторный прогон
+затирал вычитку молча.
 
 Что делает: для каждой книги находит начала рассказов по заголовку-шапке (24pt),
 режет на 17 рассказов, срезает колонтитулы/номера страниц, склеивает переносы,
@@ -309,12 +317,24 @@ def extract_story(doc, story: Story, base_x: float) -> str:
     return f"# {story.title}\n\n{body}"
 
 
-def write_raw(book_id: str, story: Story, md: str) -> Path:
+def write_raw(book_id: str, story: Story, md: str, *, force: bool, dry_run: bool) -> str:
+    """Записать рассказ в _raw. Возвращает статус: written | skipped | overwritten | dry.
+
+    Существующий файл без --force не трогаем: там может лежать ручная вычитка,
+    которой больше нигде нет.
+    """
     out_dir = RAW / book_id
-    out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{story.slug}.md"
+    exists = path.exists()
+
+    if exists and not force:
+        return "skipped"
+    if dry_run:
+        return "dry"
+
+    out_dir.mkdir(parents=True, exist_ok=True)
     path.write_text(md, encoding="utf-8", newline="\n")
-    return path
+    return "overwritten" if exists else "written"
 
 
 def first_body_line(md: str) -> str:
@@ -350,24 +370,50 @@ def build_stories(doc, book: Book) -> list[Story]:
 
 
 def main() -> None:
-    total = 0
-    print(f"{'book':8} {'NN':2} {'slug':32} {'pages':>9} {'words':>6}  first line / warnings")
-    print("-" * 100)
+    force = "--force" in sys.argv
+    dry_run = "--dry-run" in sys.argv
+
+    counts = {"written": 0, "overwritten": 0, "skipped": 0, "dry": 0}
+    warned = 0
+    print(f"{'book':8} {'NN':2} {'slug':32} {'pages':>9} {'words':>6} {'статус':>12}  first line / warnings")
+    print("-" * 118)
     for book in BOOKS:
         doc = pymupdf.open(str(ROOT / book.pdf))
         base_x = body_left_margin(doc)
         stories = build_stories(doc, book)
         for st in stories:
             md = extract_story(doc, st, base_x)
-            write_raw(book.id, st, md)
-            total += 1
+            status = write_raw(book.id, st, md, force=force, dry_run=dry_run)
+            counts[status] += 1
+            if st.warnings:
+                warned += 1
             words = len(re.findall(r"\w+", md, flags=re.UNICODE))
             warn = ("  ⚠ " + "; ".join(st.warnings)) if st.warnings else ""
             pages = f"{st.start_page}-{st.end_page - 1}"
-            print(f"{book.id:8} {st.order:02d} {st.slug:32} {pages:>9} {words:>6}  {first_body_line(md)[:40]}{warn}")
+            print(
+                f"{book.id:8} {st.order:02d} {st.slug:32} {pages:>9} {words:>6} {status:>12}"
+                f"  {first_body_line(md)[:40]}{warn}"
+            )
         doc.close()
-    print("-" * 100)
-    print(f"Готово: {total} файлов в {RAW.relative_to(ROOT)} (ожидалось 34).")
+    print("-" * 118)
+
+    total = sum(counts.values())
+    print(
+        f"Готово: {total} рассказов (ожидалось 34) — новых {counts['written']}, "
+        f"перезаписано {counts['overwritten']}, пропущено {counts['skipped']}, "
+        f"вхолостую {counts['dry']}. Каталог: {RAW.relative_to(ROOT)}"
+    )
+    if counts["skipped"]:
+        print(
+            f"  ⓘ {counts['skipped']} файлов уже существовали и НЕ тронуты — в них может быть\n"
+            "    ручная вычитка. Перезаписать намеренно: python scripts/ingest_pdf.py --force"
+        )
+
+    # Ненулевой код возврата на расхождении с печатным оглавлением: раньше это был
+    # только значок в таблице, и в цепочке команд предупреждение проглатывалось.
+    if warned:
+        print(f"  ⚠ у {warned} рассказов стартовая страница разошлась с оглавлением — проверьте детекцию")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

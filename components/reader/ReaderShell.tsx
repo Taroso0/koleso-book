@@ -1,14 +1,8 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useReducedMotionSafe } from "@/components/motion/useReducedMotionSafe";
+import { useIsoLayoutEffect } from "@/components/motion/useIsoLayoutEffect";
 import { cn } from "@/lib/utils";
 import {
   applyReadingTheme,
@@ -28,11 +22,6 @@ const THEMES: { id: ReadingTheme; label: string }[] = [
   { id: "sepia", label: "Сепия" },
   { id: "dark", label: "Тёмная" },
 ];
-
-// useLayoutEffect на клиенте, useEffect на сервере (без SSR-предупреждения).
-// Нужен пре-пейнт-эффект, чтобы при F5 в постраничном режиме не мелькнул «свиток».
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 // Клиентская оболочка чтения (Шаг 2.3): постраничный режим (CSS-колонки),
 // прогресс в localStorage (восстановление позиции, «продолжить»), темы чтения.
