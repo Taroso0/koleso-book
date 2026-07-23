@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Шаг 8 — Офис днём</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root {
+    --paper-bg: oklch(0.968 0.006 160);
+    --sheet: oklch(0.988 0.003 95);
+    --manila: oklch(0.915 0.028 92);
+    --manila-deep: oklch(0.86 0.035 90);
+    --ink: oklch(0.235 0.012 250);
+    --ink-soft: oklch(0.47 0.012 250);
+    --faint: oklch(0.6 0.01 250);
+    --sodium: oklch(0.7 0.14 78);
+    --hairline: oklch(0.235 0.012 250 / 0.14);
+    --hairline-soft: oklch(0.235 0.012 250 / 0.07);
+    --serif: "Source Serif 4", Georgia, serif;
+    --sans: Inter, system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --tilt: 1.5deg;
+    --stamp-tilt: -5deg;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--serif); background: var(--paper-bg); color: var(--ink); }
+  body[data-ruled="on"] .field-bg { background-image: repeating-linear-gradient(180deg, transparent, transparent 27px, var(--hairline-soft) 27px, var(--hairline-soft) 28px); }
+  a { color: var(--ink); } a:hover { color: var(--sodium); }
+
+  .proto-badge { max-width: 960px; margin: 0 auto; padding: 20px 24px 0; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px 96px; }
+
+  .mono-mark { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); }
+
+  /* ── колонтитулы документа ── */
+  .runhead, .runfoot { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; }
+  .runhead { border-bottom: 1px solid var(--hairline); }
+  .runfoot { border-top: 1px solid var(--hairline); margin-top: 72px; }
+  .runhead p, .runfoot p { margin: 0; }
+
+  /* ── рабочее поле: поля + линейка ── */
+  .field { display: grid; grid-template-columns: 128px 1fr; }
+  .field-margin { padding: 84px 20px 0 0; border-right: 1px solid var(--hairline); }
+  .field-margin .mm { display: block; margin: 0 0 8px; }
+  .field-margin .mm + .rule { width: 22px; height: 1px; background: var(--hairline); margin: 14px 0; }
+  body[data-marks="off"] .field-margin .mm, body[data-marks="off"] .field-margin .rule { visibility: hidden; }
+  .field-bg { padding: 72px 0 0 clamp(24px, 5vw, 56px); }
+
+  h2 { margin: 0; font-size: 1.5rem; font-weight: 500; letter-spacing: -0.01em; }
+  .h-rule { width: 48px; height: 1px; background: var(--ink); opacity: 0.4; margin-top: 12px; }
+
+  /* ══ Автор: личный лист ══ */
+  .doc { position: relative; margin-top: 32px; background: var(--sheet); border: 1px solid var(--hairline); box-shadow: 0 14px 28px -22px oklch(0.2 0.02 250 / 0.45); }
+  body[data-doc-tone="manila"] .doc { background: var(--manila); }
+  .doc-head { display: flex; justify-content: space-between; gap: 16px; padding: 14px 26px; border-bottom: 1px solid var(--hairline); }
+  .doc-head p { margin: 0; }
+  .doc-body { display: grid; grid-template-columns: 1fr 180px; gap: clamp(24px, 4vw, 44px); padding: 26px 26px 24px; }
+  .doc-body .lead-in { margin: 0 0 14px; }
+  .doc-body .voice { margin: 0; font-size: 1.08rem; line-height: 1.7; color: var(--ink); max-width: 46ch; }
+  .doc-body .voice em { font-style: italic; }
+  .sig-row { display: flex; align-items: baseline; gap: 14px; margin-top: 26px; }
+  .sig-row .sig { font-style: italic; font-size: 1.05rem; border-bottom: 1px dotted var(--hairline); padding: 0 18px 2px 4px; }
+  .sig-row .mono-mark { margin: 0; }
+  /* фотокарточка */
+  .photo { border: 1px solid var(--hairline); aspect-ratio: 3 / 4; position: relative;
+    background: repeating-linear-gradient(45deg, transparent, transparent 7px, var(--hairline-soft) 7px, var(--hairline-soft) 8px); }
+  .photo .corner { position: absolute; width: 14px; height: 14px; border: 1px solid var(--hairline); }
+  .photo .corner.tl { top: -5px; left: -5px; border-right: none; border-bottom: none; }
+  .photo .corner.br { bottom: -5px; right: -5px; border-left: none; border-top: none; }
+  .photo-cap { margin: 10px 0 0; text-align: center; }
+  /* штамп — единственный натрий на этом экране */
+  .stamp { position: absolute; left: 26px; bottom: -18px; transform: rotate(var(--stamp-tilt)); padding: 7px 12px 6px;
+    border: 2px solid var(--sodium); color: var(--sodium); background: var(--paper-bg); opacity: 0.92;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; line-height: 1.7; text-align: center; }
+  .stamp b { display: block; font-weight: 700; font-size: 10px; }
+  body[data-stamp="off"] .stamp { display: none; }
+
+  /* ══ Мастерская: стол с черновиками ══ */
+  .lede { margin: 20px 0 0; font-size: 1.02rem; line-height: 1.7; color: var(--ink-soft); max-width: 52ch; }
+  .desk { display: grid; grid-template-columns: 1.2fr 1fr 0.9fr; gap: clamp(18px, 3vw, 30px); align-items: start; margin-top: 40px; }
+  .draft { border: 1px solid var(--hairline); background: var(--sheet); padding: 16px 18px 18px; box-shadow: 0 12px 24px -20px oklch(0.2 0.02 250 / 0.45); }
+  .draft .tag { margin: 0 0 12px; }
+  .draft.d1 { transform: rotate(calc(var(--tilt) * -0.6)); }
+  .draft.d2 { transform: rotate(calc(var(--tilt) * 0.8)) translateY(14px); background: var(--manila); }
+  .draft.d3 { transform: rotate(calc(var(--tilt) * -0.3)) translateY(4px); }
+  .draft .frag { margin: 0; font-size: 0.98rem; line-height: 1.65; color: var(--ink-soft); font-style: italic; }
+  .draft .strike { text-decoration: line-through; text-decoration-color: oklch(0.235 0.012 250 / 0.35); }
+  .draft .lines { margin-top: 16px; height: 54px; background: repeating-linear-gradient(180deg, transparent, transparent 17px, var(--hairline) 18px); }
+  .draft .ill { aspect-ratio: 4 / 5; border: 1px solid var(--hairline);
+    background: repeating-linear-gradient(45deg, transparent, transparent 7px, var(--hairline-soft) 7px, var(--hairline-soft) 8px); }
+  .read { display: inline-block; margin-top: 44px; font-family: var(--sans); font-size: 0.95rem; text-decoration: none;
+    border-bottom: 1px solid var(--sodium); padding-bottom: 3px; transition: color .2s; }
+
+  @media (max-width: 760px) {
+    .field { grid-template-columns: 1fr; }
+    .field-margin { border-right: none; border-bottom: 1px solid var(--hairline); padding: 28px 0 14px; display: flex; gap: 18px; align-items: baseline; }
+    .field-margin .mm { margin: 0; } .field-margin .rule { display: none; }
+    .field-bg { padding: 36px 0 0; }
+    .doc-body { grid-template-columns: 1fr; }
+    .photo { max-width: 200px; }
+    .desk { grid-template-columns: 1fr; }
+    .draft.d2, .draft.d3 { transform: rotate(calc(var(--tilt) * 0.4)); }
+  }
+</style>
+</head>
+<body data-marks="on" data-stamp="on" data-ruled="on" data-doc-tone="white">
+
+<p class="proto-badge">Шаг 8 — офис днём · светлые секции как документ и стол с черновиками</p>
+
+<main class="container">
+  <div class="runhead" data-screen-label="Колонтитул — верх">
+    <p class="mono-mark">боковым зрением · служебные страницы</p>
+    <p class="mono-mark">лист 04–05</p>
+  </div>
+
+  <section aria-labelledby="author-heading" class="field" data-screen-label="Автор — личный лист">
+    <aside class="field-margin" aria-hidden="true">
+      <span class="mono-mark mm">разд. 04</span>
+      <div class="rule"></div>
+      <span class="mono-mark mm">автор</span>
+      <span class="mono-mark mm">рег. 14.02.2024</span>
+    </aside>
+    <div class="field-bg">
+      <h2 id="author-heading">Автор</h2>
+      <div class="h-rule"></div>
+      <article class="doc">
+        <header class="doc-head">
+          <p class="mono-mark">личный лист · экз. единственный</p>
+          <p class="mono-mark">форма № 2-А</p>
+        </header>
+        <div class="doc-body">
+          <div>
+            <p class="mono-mark lead-in">кирилов, евгений · род занятий: автор · жанр: офисная готика</p>
+            <p class="voice">Евгений Кирилов пишет «офисную готику» — чудо, спрятанное в сером корпоративном быту: в опенспейсе, в фонаре в три часа ночи, в системном уведомлении. Тепло, иронично, по-человечески — а не торжественно.</p>
+            <div class="sig-row">
+              <span class="sig">Е.&nbsp;Кирилов</span>
+              <span class="mono-mark">подпись</span>
+            </div>
+          </div>
+          <figure style="margin: 0">
+            <div class="photo">
+              <div class="corner tl"></div>
+              <div class="corner br"></div>
+            </div>
+            <figcaption class="mono-mark photo-cap">место для фотокарточки · скоро</figcaption>
+          </figure>
+        </div>
+        <div class="stamp" aria-hidden="true"><b>принято к прочтению</b>вх. № 2026-071</div>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="workshop-heading" class="field" data-screen-label="Мастерская — стол с черновиками">
+    <aside class="field-margin" aria-hidden="true">
+      <span class="mono-mark mm">разд. 05</span>
+      <div class="rule"></div>
+      <span class="mono-mark mm">мастерская</span>
+      <span class="mono-mark mm">обн. 12.07.2026</span>
+    </aside>
+    <div class="field-bg">
+      <h2 id="workshop-heading">Мастерская</h2>
+      <div class="h-rule"></div>
+      <p class="lede">Третья книга растёт на глазах: фрагменты, черновики, заметки и новые иллюстрации. Building-in-public для художественной прозы.</p>
+      <div class="desk">
+        <article class="draft d1">
+          <p class="mono-mark tag">черновик · фрагмент 07 · 12.07</p>
+          <p class="frag">Лифт остановился между этажами — <span class="strike">и погас свет</span> и кто-то вежливо кашлянул.</p>
+          <div class="lines"></div>
+        </article>
+        <article class="draft d2">
+          <p class="mono-mark tag">заметка · без даты</p>
+          <p class="frag">Проверить: как звучит уведомление, если его никто не читает.</p>
+          <div class="lines"></div>
+        </article>
+        <article class="draft d3">
+          <p class="mono-mark tag">иллюстрация · тушь · скоро</p>
+          <div class="ill"></div>
+        </article>
+      </div>
+      <a class="read" href="#">Зайти в Мастерскую →</a>
+    </div>
+  </section>
+
+  <div class="runfoot" data-screen-label="Колонтитул — низ">
+    <p class="mono-mark">littera scripta manet — написанное слово остаётся</p>
+    <p class="mono-mark">продолжение — ночью</p>
+  </div>
+</main>
+
+<div id="tweaks-root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel">
+  const { TweaksPanel, TweakSection, TweakSlider, TweakToggle, TweakRadio, useTweaks } = window;
+  function Panel() {
+    const [t, setTweak] = useTweaks({ marks: true, ruled: true, stamp: true, stampTilt: -5, tone: "Белый", tilt: 1.5 });
+    React.useEffect(() => {
+      document.body.dataset.marks = t.marks ? "on" : "off";
+      document.body.dataset.ruled = t.ruled ? "on" : "off";
+      document.body.dataset.stamp = t.stamp ? "on" : "off";
+      document.body.dataset.docTone = t.tone === "Белый" ? "white" : "manila";
+      document.documentElement.style.setProperty("--stamp-tilt", t.stampTilt + "deg");
+      document.documentElement.style.setProperty("--tilt", t.tilt + "deg");
+    }, [t]);
+    return (
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Фактура документа" />
+        <TweakToggle label="Пометки на полях" value={t.marks} onChange={(v) => setTweak("marks", v)} />
+        <TweakToggle label="Линовка фона" value={t.ruled} onChange={(v) => setTweak("ruled", v)} />
+        <TweakRadio label="Тон личного листа" value={t.tone} options={["Белый", "Манила"]} onChange={(v) => setTweak("tone", v)} />
+        <TweakSection label="Акценты" />
+        <TweakToggle label="Штамп «принято»" value={t.stamp} onChange={(v) => setTweak("stamp", v)} />
+        <TweakSlider label="Наклон штампа" value={t.stampTilt} min={-8} max={8} step={1} unit="°" onChange={(v) => setTweak("stampTilt", v)} />
+        <TweakSection label="Стол" />
+        <TweakSlider label="Наклон черновиков" value={t.tilt} min={0} max={3} step={0.5} unit="°" onChange={(v) => setTweak("tilt", v)} />
+      </TweaksPanel>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<Panel />);
+</script>
+</body>
+</html>

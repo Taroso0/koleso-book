@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Шаг 7 — Книги как объекты</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root {
+    --paper-bg: oklch(0.968 0.006 160);
+    --ink: oklch(0.235 0.012 250);
+    --ink-soft: oklch(0.47 0.012 250);
+    --faint: oklch(0.6 0.01 250);
+    --sodium: oklch(0.7 0.14 78);
+    --manila: oklch(0.915 0.028 92);
+    --manila-deep: oklch(0.86 0.035 90);
+    --manila-ink: oklch(0.32 0.025 70);
+    --concrete: oklch(0.33 0.011 250);
+    --concrete-ink: oklch(0.9 0.008 95);
+    --hairline: oklch(0.235 0.012 250 / 0.14);
+    --serif: "Source Serif 4", Georgia, serif;
+    --sans: Inter, system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --spine: 14px;
+    --draft-tilt: 2deg;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--serif); background: var(--paper-bg); color: var(--ink); }
+  a { color: var(--ink); } a:hover { color: var(--sodium); }
+
+  .proto-badge { max-width: 960px; margin: 0 auto; padding: 20px 24px 0; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+  .container { max-width: 960px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  h2 { margin: 0; font-size: 1.5rem; font-weight: 500; letter-spacing: -0.01em; }
+  .accent-line { width: 48px; height: 2px; background: var(--sodium); margin-top: 12px; }
+  .lede { margin: 16px 0 0; font-size: 1.02rem; line-height: 1.7; color: var(--ink-soft); max-width: 52ch; }
+
+  /* ══ Разворот ══ */
+  .spread { display: grid; grid-template-columns: 340px 1fr; gap: clamp(32px, 6vw, 72px); align-items: center; margin-top: 76px; }
+  .spread.mirror { grid-template-columns: 1fr 340px; }
+  .spread.mirror .book-col { order: 2; }
+  .spread.mirror .info-col { order: 1; }
+  body[data-mirror="off"] .spread.mirror { grid-template-columns: 340px 1fr; }
+  body[data-mirror="off"] .spread.mirror .book-col { order: 0; }
+  body[data-mirror="off"] .spread.mirror .info-col { order: 1; }
+
+  /* ── книга-объект ── */
+  .book-col { justify-self: center; }
+  .book { position: relative; width: min(300px, 72vw); aspect-ratio: 5 / 7.2; border-radius: 2px 4px 4px 2px;
+    box-shadow: 0 1px 0 oklch(1 0 0 / 0.5) inset, 1px 0 0 oklch(0 0 0 / 0.06) inset,
+      0 24px 34px -22px oklch(0.2 0.02 250 / 0.55), 0 6px 10px -6px oklch(0.2 0.02 250 / 0.3); }
+  /* корешок: сгиб + тень переплёта */
+  .book::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: var(--spine); border-radius: 2px 0 0 2px;
+    background: linear-gradient(90deg, oklch(0 0 0 / 0.16), oklch(0 0 0 / 0.02) 45%, oklch(1 0 0 / 0.22) 72%, oklch(0 0 0 / 0.1) 100%); }
+  /* блок страниц по правому обрезу */
+  .book::after { content: ""; position: absolute; top: 2px; bottom: 2px; right: -5px; width: 5px; border-radius: 0 2px 2px 0;
+    background: repeating-linear-gradient(180deg, oklch(0.99 0.004 95), oklch(0.99 0.004 95) 2px, oklch(0.82 0.008 95) 3px);
+    box-shadow: 1px 1px 2px oklch(0 0 0 / 0.18); }
+  .cover { position: absolute; inset: 0; padding: 26px 22px 22px calc(var(--spine) + 14px); display: flex; flex-direction: column; text-align: center; }
+  .cover .pub { margin: 0; font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.65; }
+  .cover .ttl { margin: auto 0 0; font-size: clamp(1.7rem, 2.6vw, 2.15rem); font-weight: 500; line-height: 1.12; letter-spacing: 0.005em; }
+  .cover .sub { margin: 12px 0 auto; font-style: italic; font-size: 0.85rem; opacity: 0.72; }
+  .cover .rule { width: 34px; height: 1px; margin: 14px auto 0; background: currentColor; opacity: 0.45; }
+  .cover .yr { margin: 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; opacity: 0.6; }
+  .cover .glyph { width: 30px; height: 30px; margin: 0 auto; border: 1px solid currentColor; border-radius: 50%; opacity: 0.5; position: relative; }
+  .cover .glyph i { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: currentColor; }
+
+  .book[data-skin="manila"] { background: linear-gradient(160deg, var(--manila), var(--manila-deep)); color: var(--manila-ink); }
+  .book[data-skin="concrete"] { background: linear-gradient(165deg, oklch(0.37 0.012 250), var(--concrete) 55%, oklch(0.29 0.011 252)); color: var(--concrete-ink); }
+  .book[data-skin="concrete"] .glyph { color: var(--sodium); opacity: 0.9; }
+  body[data-skin2="manila"] .book.skin2 { background: linear-gradient(160deg, var(--manila), var(--manila-deep)); color: var(--manila-ink); }
+  body[data-skin2="manila"] .book.skin2 .glyph { color: currentColor; opacity: 0.5; }
+
+  .asset-note { margin: 18px 0 0; text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+  body[data-notes="off"] .asset-note { display: none; }
+
+  /* ── колонка сведений ── */
+  .info-col .num { margin: 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--faint); }
+  .info-col h3 { margin: 10px 0 0; font-size: 1.9rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.15; }
+  .meta { margin: 14px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  .meta b { color: var(--ink); font-weight: 500; }
+  .pubsay { margin: 20px 0 0; font-size: 1.06rem; line-height: 1.65; color: var(--ink-soft); max-width: 44ch; }
+  .pubsay em { color: var(--ink); }
+  .themes { margin: 24px 0 0; }
+  .themes .cap { margin: 0 0 10px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+  .themes ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  .themes a { display: inline-block; padding: 5px 12px; border: 1px solid var(--hairline); border-radius: 999px;
+    font-family: var(--sans); font-size: 0.82rem; text-decoration: none; color: var(--ink-soft); transition: border-color .2s, color .2s; }
+  .themes a:hover { border-color: var(--sodium); color: var(--ink); }
+  .read { display: inline-block; margin-top: 28px; font-family: var(--sans); font-size: 0.95rem; text-decoration: none;
+    border-bottom: 1px solid var(--sodium); padding-bottom: 3px; transition: color .2s; }
+
+  /* ══ Третья — стопка черновиков ══ */
+  .drafts-band { margin-top: 96px; padding-top: 64px; border-top: 1px solid var(--hairline); display: grid; grid-template-columns: 340px 1fr; gap: clamp(32px, 6vw, 72px); align-items: center; }
+  .stack { position: relative; width: min(300px, 72vw); aspect-ratio: 5 / 6; justify-self: center; }
+  .sheet { position: absolute; inset: 8% 4%; background: oklch(0.985 0.004 95); border: 1px solid var(--hairline); border-radius: 1px;
+    box-shadow: 0 10px 22px -14px oklch(0.2 0.02 250 / 0.4); }
+  .sheet.s1 { transform: rotate(calc(var(--draft-tilt) * -1)) translate(-6px, 8px); background: var(--manila); }
+  .sheet.s2 { transform: rotate(calc(var(--draft-tilt) * 0.6)) translate(8px, 3px); }
+  .sheet.s3 { transform: rotate(calc(var(--draft-tilt) * -0.25)); padding: 22px 20px; }
+  .sheet.s3 .tag { margin: 0; font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sodium); }
+  .sheet.s3 .frag { margin: 14px 0 0; font-size: 1rem; line-height: 1.65; color: var(--ink-soft); font-style: italic; }
+  .sheet.s3 .strike { text-decoration: line-through; text-decoration-color: oklch(0.235 0.012 250 / 0.35); }
+  .sheet.s3 .lines { margin-top: 18px; height: 72px;
+    background: repeating-linear-gradient(180deg, transparent, transparent 17px, var(--hairline) 18px); }
+  .clip { position: absolute; top: 4%; left: 12%; width: 14px; height: 34px; border: 2px solid oklch(0.55 0.01 250); border-radius: 7px 7px 3px 3px; border-bottom: none; opacity: 0.65; }
+
+  /* ── подвал секции ── */
+  .coda { margin-top: 88px; padding-top: 24px; border-top: 1px solid var(--hairline); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .coda p { margin: 0; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); }
+
+  @media (max-width: 760px) {
+    .spread, .spread.mirror, .drafts-band { grid-template-columns: 1fr; gap: 36px; }
+    .spread.mirror .book-col { order: 0; } .spread.mirror .info-col { order: 1; }
+    .info-col { text-align: left; }
+  }
+</style>
+</head>
+<body data-mirror="on" data-skin2="concrete" data-notes="on">
+
+<p class="proto-badge">Шаг 7 — книги как объекты · editorial-развороты вместо карточек</p>
+
+<main class="container">
+  <section id="books" aria-labelledby="books-heading" data-screen-label="Книги — заголовок секции">
+    <h2 id="books-heading">Книги</h2>
+    <div class="accent-line"></div>
+    <p class="lede">Две изданные книги — тридцать четыре рассказа. Третья пишется на глазах, в Мастерской.</p>
+
+    <article class="spread" data-screen-label="Разворот 1 — Колизей">
+      <div class="book-col">
+        <div class="book" data-skin="manila" aria-label="Обложка: Колизей">
+          <div class="cover">
+            <p class="pub">Евгений Кирилов</p>
+            <p class="ttl">Колизей</p>
+            <div class="rule"></div>
+            <p class="sub">рассказы</p>
+            <p class="yr">MMXXII</p>
+          </div>
+        </div>
+        <p class="asset-note">макет обложки · заменить реальным ассетом</p>
+      </div>
+      <div class="info-col">
+        <p class="num">книга 01 / 03</p>
+        <h3>Колизей</h3>
+        <p class="meta"><b>2022</b> · 17 рассказов · издана</p>
+        <p class="pubsay">Гуманистические притчи о свете и тьме — <em>магический реализм в повседневности</em>: озорной луч дружит с мальчиком, а зло всегда прикладывает инструкцию.</p>
+        <div class="themes">
+          <p class="cap">стоит на темах Колеса</p>
+          <ul>
+            <li><a href="#wheel">Свет</a></li>
+            <li><a href="#wheel">Душа</a></li>
+            <li><a href="#wheel">Выбор</a></li>
+          </ul>
+        </div>
+        <a class="read" href="#">Читать в Читальне →</a>
+      </div>
+    </article>
+
+    <article class="spread mirror" data-screen-label="Разворот 2 — Колесо Сансары">
+      <div class="book-col">
+        <div class="book skin2" data-skin="concrete" aria-label="Обложка: Колесо Сансары">
+          <div class="cover">
+            <p class="pub">Евгений Кирилов</p>
+            <p class="ttl">Колесо Сансары</p>
+            <div class="rule"></div>
+            <p class="sub">рассказы</p>
+            <div class="glyph" aria-hidden="true"><i></i></div>
+            <p class="yr" style="margin-top: 14px">MMXXIII</p>
+          </div>
+        </div>
+        <p class="asset-note">макет обложки · заменить реальным ассетом</p>
+      </div>
+      <div class="info-col">
+        <p class="num">книга 02 / 03</p>
+        <h3>Колесо Сансары</h3>
+        <p class="meta"><b>2023</b> · 17 рассказов · издана</p>
+        <p class="pubsay">По слову издателя — <em>«офисная готика»</em>: серые и скучные области жизни, намеренно расцвеченные в фантастические цвета. Смерть здесь — усталый персонаж, честно делающий свою работу.</p>
+        <div class="themes">
+          <p class="cap">стоит на темах Колеса</p>
+          <ul>
+            <li><a href="#wheel">Иллюзия</a></li>
+            <li><a href="#wheel">Смерть</a></li>
+            <li><a href="#wheel">Перерождение</a></li>
+          </ul>
+        </div>
+        <a class="read" href="#">Читать в Читальне →</a>
+      </div>
+    </article>
+
+    <article class="drafts-band" data-screen-label="Третья книга — черновики">
+      <div class="stack" aria-label="Стопка черновиков третьей книги">
+        <div class="sheet s1"></div>
+        <div class="sheet s2"></div>
+        <div class="sheet s3">
+          <p class="tag">черновик · фрагмент 07</p>
+          <p class="frag">Лифт остановился между этажами — <span class="strike">и погас свет</span> и кто-то вежливо кашлянул.</p>
+          <div class="lines"></div>
+        </div>
+        <div class="clip" aria-hidden="true"></div>
+      </div>
+      <div class="info-col">
+        <p class="num">книга 03 / 03 · в работе</p>
+        <h3>Без названия</h3>
+        <p class="meta">пишется сейчас · фрагменты и заметки</p>
+        <p class="pubsay">Третья книга — ещё не объект: стопка черновиков растёт на глазах. Фрагменты, вычеркнутые строки и новые иллюстрации выкладываются по мере письма.</p>
+        <a class="read" href="#">Зайти в Мастерскую →</a>
+      </div>
+    </article>
+
+    <div class="coda">
+      <p>littera scripta manet — написанное слово остаётся</p>
+      <p>2 изданы · 1 в работе</p>
+    </div>
+  </section>
+</main>
+
+<div id="tweaks-root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel">
+  const { TweaksPanel, TweakSection, TweakSlider, TweakToggle, TweakRadio, useTweaks } = window;
+  function Panel() {
+    const [t, setTweak] = useTweaks({ mirror: true, skin2: "Бетон", spine: 14, tilt: 2, notes: true });
+    React.useEffect(() => {
+      document.body.dataset.mirror = t.mirror ? "on" : "off";
+      document.body.dataset.skin2 = t.skin2 === "Бетон" ? "concrete" : "manila";
+      document.body.dataset.notes = t.notes ? "on" : "off";
+      document.documentElement.style.setProperty("--spine", t.spine + "px");
+      document.documentElement.style.setProperty("--draft-tilt", t.tilt + "deg");
+    }, [t]);
+    return (
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Развороты" />
+        <TweakToggle label="Зеркальная композиция" value={t.mirror} onChange={(v) => setTweak("mirror", v)} />
+        <TweakRadio label="Обложка «Сансары»" value={t.skin2} options={["Бетон", "Манила"]} onChange={(v) => setTweak("skin2", v)} />
+        <TweakSection label="Физичность" />
+        <TweakSlider label="Корешок" value={t.spine} min={8} max={24} step={1} unit="px" onChange={(v) => setTweak("spine", v)} />
+        <TweakSlider label="Наклон черновиков" value={t.tilt} min={0} max={4} step={0.5} unit="°" onChange={(v) => setTweak("tilt", v)} />
+        <TweakSection label="Служебное" />
+        <TweakToggle label="Пометки-плейсхолдеры" value={t.notes} onChange={(v) => setTweak("notes", v)} />
+      </TweaksPanel>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<Panel />);
+</script>
+</body>
+</html>
