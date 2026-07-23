@@ -1237,3 +1237,329 @@ svg[data-live="true"] .wheel-story-dot {
   border-radius: 7px 7px 3px 3px;
   opacity: 0.65;
 }
+
+/* ════════ Офис днём — светлые секции «Автор» и «Мастерская» (§4, Шаг 8) ════════
+   Пересборка светлых тизеров Витрины в «документ/архив днём»: рабочее поле
+   [поле-пометки | контент], личный лист (Автор) и стол с черновиками (Мастерская).
+   Плотность даётся фактурой и вёрсткой, не добавленным текстом. Всё scoped под
+   .office-day: имена (.field/.doc/.draft/.voice) намеренно generic — вне области
+   они столкнулись бы с глобальными (напр. .draft-* у «Книг»). Физичность — как у
+   .warm-hero/.book-object: штриховки, линовка, штамп чистым CSS, без картинок.
+   Наклоны листов и штампа статичны (§10 — «движется только сверхъестественное»),
+   под reduced-motion выключать нечего. Двухколоночное поле — только на lg (≥1024px):
+   до lg контейнер max-w-2xl, 128px поля + контент не помещаются (как в BooksSection). */
+.office-day {
+  --sheet: oklch(0.988 0.003 95); /* бумага листа */
+  --manila: oklch(0.915 0.028 92); /* второй тон бумаги (= --manila «Книг») */
+  --hairline: oklch(0.235 0.012 250 / 0.14); /* рамки/разделители */
+  --hairline-soft: oklch(0.235 0.012 250 / 0.07); /* штриховки/линовка */
+  /* Третий тон текста. Хендофф давал oklch(0.6 …) — 3.6:1 на бумаге, провал AA.
+     0.54 даёт 4.62:1 (как в BooksSection): иерархия цела, порог взят. */
+  --faint: oklch(0.54 0.01 250);
+  --tilt: 1.5deg; /* базовый наклон черновиков */
+  --stamp-tilt: -5deg; /* наклон штампа */
+}
+.office-day .mono-mark {
+  margin: 0;
+  font-family: var(--font-mono-accent), ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ── колонтитулы документа ── */
+.office-day .runhead,
+.office-day .runfoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+.office-day .runhead {
+  border-bottom: 1px solid var(--hairline);
+}
+.office-day .runfoot {
+  /* нижний — только закрывающая пометка справа (девиз «littera scripta manet»
+     живёт в секции «Книги», здесь не повторяем) */
+  justify-content: flex-end;
+  border-top: 1px solid var(--hairline);
+  margin-top: clamp(40px, 6vh, 72px);
+}
+
+/* ── рабочее поле: поле-пометки + контент. По умолчанию (мобильный) — одна колонка,
+   пометки становятся горизонтальной полосой сверху; на lg раскрывается в две. ── */
+.office-day .field {
+  display: grid;
+}
+.office-day .field-margin {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  padding: 28px 0 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.office-day .field-margin .rule {
+  display: none;
+}
+.office-day .field-bg {
+  min-width: 0; /* иначе длинная моно-строка распирает grid-колонку */
+  padding: 36px 0 0;
+  /* линовка фона — бюрократическая фактура (не декоративный градиент) */
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent,
+    transparent 27px,
+    var(--hairline-soft) 27px,
+    var(--hairline-soft) 28px
+  );
+}
+.office-day .h-rule {
+  width: 48px;
+  height: 1px;
+  margin-top: 12px;
+  background: var(--foreground);
+  opacity: 0.4;
+}
+
+/* ══ Автор: личный лист (машинописный) ══ */
+.office-day .doc {
+  position: relative;
+  margin-top: 32px;
+  background: var(--sheet);
+  border: 1px solid var(--hairline);
+  box-shadow: 0 14px 28px -22px oklch(0.2 0.02 250 / 0.45);
+}
+.office-day .doc-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 26px;
+  border-bottom: 1px solid var(--hairline);
+}
+.office-day .doc-body {
+  display: grid;
+  gap: clamp(24px, 4vw, 44px);
+  padding: 26px 26px 24px;
+}
+.office-day .doc-body > * {
+  min-width: 0;
+}
+.office-day .lead-in {
+  margin: 0 0 14px;
+}
+.office-day .voice {
+  margin: 0;
+  max-width: 46ch;
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 1.08rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+.office-day .voice em {
+  font-style: italic;
+}
+.office-day .sig-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 26px;
+}
+.office-day .sig {
+  padding: 0 18px 2px 4px;
+  border-bottom: 1px dotted var(--hairline);
+  font-family: var(--font-prose), Georgia, serif;
+  font-style: italic;
+  font-size: 1.05rem;
+}
+/* фотокарточка-плейсхолдер (диагональная штриховка) */
+.office-day .photo {
+  position: relative;
+  max-width: 200px;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--hairline);
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 7px,
+    var(--hairline-soft) 7px,
+    var(--hairline-soft) 8px
+  );
+}
+.office-day .photo .corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--hairline);
+}
+.office-day .photo .corner.tl {
+  top: -5px;
+  left: -5px;
+  border-right: none;
+  border-bottom: none;
+}
+.office-day .photo .corner.br {
+  right: -5px;
+  bottom: -5px;
+  border-top: none;
+  border-left: none;
+}
+.office-day .photo-cap {
+  margin: 10px 0 0;
+  text-align: center;
+}
+/* штамп — единственный натрий секции «Автор» (--sodium-deep = точный oklch хендоффа).
+   Декоративен (aria-hidden): «резиновый оттиск», не основной текст для чтения. */
+.office-day .stamp {
+  position: absolute;
+  left: 26px;
+  bottom: -18px;
+  padding: 7px 12px 6px;
+  transform: rotate(var(--stamp-tilt));
+  border: 2px solid var(--sodium-deep);
+  background: var(--background);
+  color: var(--sodium-deep);
+  opacity: 0.92;
+  font-family: var(--font-mono-accent), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  line-height: 1.7;
+  text-align: center;
+  text-transform: uppercase;
+}
+.office-day .stamp b {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ══ Мастерская: стол с черновиками ══ */
+.office-day .lede {
+  margin: 20px 0 0;
+  max-width: 52ch;
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+.office-day .desk {
+  display: grid;
+  gap: clamp(18px, 3vw, 30px);
+  align-items: start;
+  margin-top: 40px;
+}
+.office-day .draft {
+  padding: 16px 18px 18px;
+  border: 1px solid var(--hairline);
+  background: var(--sheet);
+  box-shadow: 0 12px 24px -20px oklch(0.2 0.02 250 / 0.45);
+}
+.office-day .draft .tag {
+  margin: 0 0 12px;
+}
+.office-day .draft.d2 {
+  background: var(--manila);
+}
+/* мобильный: наклоны упрощены (одинаковый лёгкий поворот) — на lg развернём */
+.office-day .draft.d1,
+.office-day .draft.d2,
+.office-day .draft.d3 {
+  transform: rotate(calc(var(--tilt) * 0.4));
+}
+.office-day .frag {
+  margin: 0;
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+.office-day .frag s {
+  text-decoration-color: oklch(0.235 0.012 250 / 0.35); /* вычеркнутое — фактура правки */
+}
+.office-day .lines {
+  height: 54px;
+  margin-top: 16px;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent,
+    transparent 17px,
+    var(--hairline) 18px
+  );
+}
+.office-day .ill {
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--hairline);
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 7px,
+    var(--hairline-soft) 7px,
+    var(--hairline-soft) 8px
+  );
+}
+/* «Зайти в Мастерскую» — единственный натрий секции. Текст остаётся --foreground
+   (на бумаге натрий как цвет текста даёт ~2:1, провал AA — как отмечено в BooksSection);
+   тёплое — только подчёркивание, при hover черта утолщается, а не красит буквы. */
+.office-day .read {
+  display: inline-block;
+  margin-top: 44px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--sodium-deep);
+  font-family: var(--font-system), ui-sans-serif, sans-serif;
+  font-size: 0.95rem;
+  color: var(--foreground);
+  text-decoration: none;
+  transition:
+    border-bottom-width 0.2s,
+    padding-bottom 0.2s;
+}
+.office-day .read:hover {
+  padding-bottom: 2px;
+  border-bottom-width: 2px;
+}
+
+/* ── десктоп (≥1024px): рабочее поле раскрывается в две колонки ── */
+@media (min-width: 1024px) {
+  .office-day .field {
+    grid-template-columns: 128px 1fr;
+  }
+  .office-day .field-margin {
+    display: block;
+    padding: 84px 20px 0 0;
+    border-right: 1px solid var(--hairline);
+    border-bottom: none;
+  }
+  .office-day .field-margin .mm {
+    display: block;
+    margin: 0 0 8px;
+  }
+  .office-day .field-margin .rule {
+    display: block;
+    width: 22px;
+    height: 1px;
+    margin: 14px 0;
+    background: var(--hairline);
+  }
+  .office-day .field-bg {
+    padding: 72px 0 0 clamp(24px, 5vw, 56px);
+  }
+  .office-day .doc-body {
+    grid-template-columns: 1fr 180px;
+  }
+  .office-day .photo {
+    max-width: none;
+  }
+  .office-day .desk {
+    grid-template-columns: 1.2fr 1fr 0.9fr;
+  }
+  .office-day .draft.d1 {
+    transform: rotate(calc(var(--tilt) * -0.6));
+  }
+  .office-day .draft.d2 {
+    transform: rotate(calc(var(--tilt) * 0.8)) translateY(14px);
+  }
+  .office-day .draft.d3 {
+    transform: rotate(calc(var(--tilt) * -0.3)) translateY(4px);
+  }
+}

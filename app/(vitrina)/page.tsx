@@ -2,10 +2,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ReduceMotionToggle } from "@/components/motion/ReduceMotionToggle";
 import { Reveal } from "@/components/motion/Reveal";
-import { AccentLine } from "@/components/motion/AccentLine";
 import { FogReveal } from "@/components/haunted/FogReveal";
 import { WarmWindowHero } from "@/components/vitrina/WarmWindowHero";
 import { BooksSection } from "@/components/vitrina/BooksSection";
+import {
+  ServiceRunHead,
+  ServiceRunFoot,
+  AuthorSheet,
+  WorkshopDesk,
+} from "@/components/vitrina/OfficeByDay";
 import { WheelIndex } from "@/components/wheel/WheelIndex";
 import { WheelGraph } from "@/components/wheel/WheelGraph";
 import { getAllStories, getBooks } from "@/lib/content";
@@ -69,71 +74,25 @@ export default function VitrinaHome() {
           <WheelIndex graph={graph} />
         </div>
 
-      {/* Скролл-сцены хаба: тизеры-«лучи» к разделам. Проявляются при входе в кадр. */}
+      {/* Скролл-сцены хаба: светлые «служебные страницы» — офис днём (§4, Шаг 8).
+          «Автор» (личный лист) и «Мастерская» (стол) — рабочее поле с пометками на
+          полях; между ними «Книги» как объекты (§9, своя editorial-подача). Все три
+          читаются одним светлым документом; колонтитулы открывают и закрывают его. */}
+      <div className="office-day mt-24">
+        <ServiceRunHead />
+        <AuthorSheet />
+      </div>
 
-      {/* TODO: финальный текст «Автор» — за автором (голос §2/§6). */}
-      <section
-        id="author"
-        aria-labelledby="author-heading"
-        className="mx-auto mt-24 max-w-2xl"
-      >
-        <Reveal>
-          <h2
-            id="author-heading"
-            className="font-serif text-2xl font-medium tracking-tight"
-          >
-            Автор
-          </h2>
-          <AccentLine className="mt-3" />
-          {/* тело — манильский «документ» (§4) */}
-          <div className="paper-surface mt-5 rounded-md p-6 sm:p-8">
-            <p className="font-serif text-lg leading-[1.7] text-muted-foreground">
-              Евгений Кирилов пишет «офисную готику» — чудо, спрятанное в сером
-              корпоративном быту: в опенспейсе, в фонаре в три часа ночи, в
-              системном уведомлении. Тёпло, иронично, по-человечески — а не
-              торжественно.
-            </p>
-            <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              Скоро
-            </p>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* Книги как объекты (§9): editorial-развороты во всю ширину контейнера —
-          книги главные экспонаты «Витрины», а не плитки каталога. Соседние тизеры
-          остаются узкими (max-w-2xl), ритм «узко — широко — узко» намеренный. */}
+      {/* Книги как объекты (§9): editorial-развороты во всю ширину контейнера — книги
+          главные экспонаты «Витрины», а не плитки каталога. Своя кода с девизом. */}
       <BooksSection books={books} />
 
-      {/* Мастерская — 3-я книга building-in-public (§9/§11-A3). Маршрут — позже. */}
-      <section
-        id="workshop"
-        aria-labelledby="workshop-heading"
-        className="mx-auto mt-24 max-w-2xl"
-      >
-        <Reveal>
-          <h2
-            id="workshop-heading"
-            className="font-serif text-2xl font-medium tracking-tight"
-          >
-            Мастерская
-          </h2>
-          <AccentLine className="mt-3" />
-          {/* тело — манильский «документ» (§4) */}
-          <div className="paper-surface mt-5 rounded-md p-6 sm:p-8">
-            <p className="font-serif text-lg leading-[1.7] text-muted-foreground">
-              Третья книга растёт на глазах: фрагменты, черновики, заметки и
-              новые иллюстрации. Building-in-public для художественной прозы.
-            </p>
-            <Link
-              href="/workshop"
-              className="mt-4 inline-block font-sans text-sm underline-offset-4 hover:underline"
-            >
-              Зайти в Мастерскую →
-            </Link>
-          </div>
-        </Reveal>
-      </section>
+      {/* Мастерская — 3-я книга building-in-public (§9/§11-A3); ссылка ведёт на /workshop.
+          Ниже — нижний колонтитул, закрывающий светлый документ. */}
+      <div className="office-day mt-24">
+        <WorkshopDesk />
+        <ServiceRunFoot />
+      </div>
 
       <Reveal>
         <footer className="mx-auto mt-24 flex max-w-2xl flex-wrap items-center gap-4 border-t border-border pt-6">
