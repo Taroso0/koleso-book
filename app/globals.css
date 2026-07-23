@@ -1077,3 +1077,163 @@ svg[data-live="true"] .wheel-story-dot {
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
+
+/* ════════ Книги как объекты — секция «Книги» «Витрины» (§9) ════════
+   Editorial-развороты вместо карточек-плиток: книга подаётся как физический предмет.
+   Физичность БЕЗ 3D и без картинок — чистый CSS: корешок (::before), торец страничного
+   блока (::after) и многослойная тень. Обложки типографические: реальных ассетов в
+   репозитории нет, это штатный вид до их появления (docs/задачи.md).
+   Здесь живёт ТОЛЬКО то, чего не выразить утилитами; сетка, отступы и типографика —
+   Tailwind в BooksSection.tsx. Локальные токены scoped в секции, как у .warm-hero:
+   проектный --concrete светлый (поверхности), а «бетонная» обложка тёмная. */
+.books-objects {
+  /* Третий тон текста между --foreground и --muted-foreground. Хендофф давал
+     oklch(0.6 0.01 250) — это 3.6:1 на бумаге, провал AA для мелкого моно. 0.54
+     даёт 4.62:1 на фоне и 4.84:1 на белом листе черновика: иерархия цела, порог взят. */
+  --faint: oklch(0.54 0.01 250);
+}
+.books-faint {
+  color: var(--faint);
+}
+
+.book-object {
+  --spine: 14px; /* ширина корешка */
+  --manila: oklch(0.915 0.028 92);
+  --manila-deep: oklch(0.86 0.035 90);
+  --manila-ink: oklch(0.32 0.025 70); /* 9.9:1 на маниле */
+  --cover-concrete: oklch(0.33 0.011 250);
+  --concrete-ink: oklch(0.9 0.008 95); /* 9.1:1 на бетоне */
+
+  position: relative;
+  width: min(300px, 72vw);
+  aspect-ratio: 5 / 7.2;
+  border-radius: 2px 4px 4px 2px;
+  box-shadow: 0 1px 0 oklch(1 0 0 / 0.5) inset, 1px 0 0 oklch(0 0 0 / 0.06) inset,
+    0 24px 34px -22px oklch(0.2 0.02 250 / 0.55),
+    0 6px 10px -6px oklch(0.2 0.02 250 / 0.3);
+}
+/* корешок: сгиб переплёта — тень, блик, тень */
+.book-object::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--spine);
+  border-radius: 2px 0 0 2px;
+  background: linear-gradient(
+    90deg,
+    oklch(0 0 0 / 0.16),
+    oklch(0 0 0 / 0.02) 45%,
+    oklch(1 0 0 / 0.22) 72%,
+    oklch(0 0 0 / 0.1) 100%
+  );
+}
+/* торец страничного блока по правому обрезу — выступает за габарит обложки */
+.book-object::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  right: -5px;
+  width: 5px;
+  border-radius: 0 2px 2px 0;
+  background: repeating-linear-gradient(
+    180deg,
+    oklch(0.99 0.004 95),
+    oklch(0.99 0.004 95) 2px,
+    oklch(0.82 0.008 95) 3px
+  );
+  box-shadow: 1px 1px 2px oklch(0 0 0 / 0.18);
+}
+.book-object[data-skin="manila"] {
+  background: linear-gradient(160deg, var(--manila), var(--manila-deep));
+  color: var(--manila-ink);
+}
+.book-object[data-skin="concrete"] {
+  background: linear-gradient(
+    165deg,
+    oklch(0.37 0.012 250),
+    var(--cover-concrete) 55%,
+    oklch(0.29 0.011 252)
+  );
+  color: var(--concrete-ink);
+}
+/* монограмма — единственный тёплый акцент на обложке (на бетоне натрий даёт 6.5:1) */
+.book-object[data-skin="concrete"] .book-object__glyph {
+  color: var(--sodium);
+  opacity: 0.9;
+}
+
+.book-object__cover {
+  position: absolute;
+  inset: 0;
+  /* слева — обойти корешок, иначе титул ложится на сгиб */
+  padding: 26px 22px 22px calc(var(--spine) + 14px);
+}
+/* Материя (§4): то же зерно, что у .paper-surface. Псевдоэлементы корня заняты
+   корешком и страницами, поэтому волокно живёт на слое обложки. */
+.book-object__cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0.34 0.34 0.34 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  mix-blend-mode: soft-light;
+  opacity: 0.4;
+}
+.book-object__cover > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── третья книга: не объект, а стопка черновиков ──
+   Растущая стопка вместо предмета — книга ещё не стала вещью (§9). Наклоны статичны:
+   это композиция, а не движение, поэтому reduced-motion здесь нечего выключать. */
+.draft-stack {
+  --draft-tilt: 2deg;
+  position: relative;
+  width: min(300px, 72vw);
+  aspect-ratio: 5 / 6;
+}
+.draft-sheet {
+  position: absolute;
+  inset: 8% 4%;
+  background: oklch(0.985 0.004 95);
+  border: 1px solid var(--border);
+  border-radius: 1px;
+  box-shadow: 0 10px 22px -14px oklch(0.2 0.02 250 / 0.4);
+}
+.draft-sheet--1 {
+  transform: rotate(calc(var(--draft-tilt) * -1)) translate(-6px, 8px);
+  background: oklch(0.915 0.028 92); /* манильский лист в глубине стопки */
+}
+.draft-sheet--2 {
+  transform: rotate(calc(var(--draft-tilt) * 0.6)) translate(8px, 3px);
+}
+.draft-sheet--3 {
+  transform: rotate(calc(var(--draft-tilt) * -0.25));
+}
+/* линовка пустых строк — черновик, который ещё дописывают */
+.draft-lines {
+  height: 72px;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent,
+    transparent 17px,
+    var(--border) 18px
+  );
+}
+.draft-clip {
+  position: absolute;
+  top: 4%;
+  left: 12%;
+  width: 14px;
+  height: 34px;
+  border: 2px solid oklch(0.55 0.01 250);
+  border-bottom: none;
+  border-radius: 7px 7px 3px 3px;
+  opacity: 0.65;
+}

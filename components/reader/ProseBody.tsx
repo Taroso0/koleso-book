@@ -7,8 +7,10 @@ import { applyTypograf } from "@/lib/typograf";
 // и не «сдвигают» курсив на соседний фрагмент. Сноски как фича — отдельный вопрос.
 const EMPHASIS = /(?<=^|[\s(«„])\*(\S(?:[^*\n]*\S)?)\*(?=$|[\s.,!?:;)»"…—-])/gu;
 
-/** Инлайн-рендер курсива (best-effort; финальная вычитка — за человеком). */
-function renderInline(text: string): ReactNode {
+/** Инлайн-рендер курсива (best-effort; финальная вычитка — за человеком).
+ *  Экспортирован: тем же курсивом размечены фразы издателя под книгами на «Витрине»
+ *  (BooksSection) — правило `*…*` в проекте должно быть ровно одно. */
+export function renderInline(text: string): ReactNode {
   const nodes: ReactNode[] = [];
   let last = 0;
   let key = 0;
